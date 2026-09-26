@@ -1,0 +1,143 @@
+[project]
+name = "course-services"
+version = "0.1.0"
+description = "Course service description"
+requires-python = ">=3.14"
+dependencies = [
+    "uvicorn==0.53.0",
+    "fastapi==0.141.1",
+    "pydantic==2.13.5",
+    "pydantic-settings==2.15.0",
+    "sqlalchemy==2.0.54",
+    "alembic==1.20.0",
+    "pyyaml==6.0.3",
+]
+
+[dependency-groups]
+dev = [
+    { include-group = "test" },
+    { include-group = "lint" },
+]
+test = [
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "pytest-cov==7.1.0",
+    "httpx2==2.13.0",
+    "locust==2.46.5",
+    "aiosqlite==0.22.1",
+]
+lint = [
+    "pylint==4.0.8",
+    "mypy==2.3.1",
+    "ruff==0.16.8",
+    "black==26.5.1",
+    "radon==6.0.1",
+    "isort==9.0.1",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra --strict-markers --cov=src --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = ["*/tests/*", "*/migrations/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["src"]
+src_paths = ["src", "tests"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+show_error_codes = true
+exclude = ['\.venv', 'build', 'dist']
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+src = ["src", "tests"]
+exclude = [".venv", "__pycache__", "build", "dist"]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+    "N",
+    "S",
+    "RET",
+    "SIM",
+    "TID",
+]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.black]
+line-length = 100
+target-version = ["py314"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.venv
+  | \.git
+  | build
+  | dist
+)/
+'''
+
+[tool.pylint.main]
+py-version = "3.14"
+jobs = 0
+ignore = [".venv", "build", "dist"]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint."messages control"]
+disable = [
+    "C0114",
+    "C0115",
+    "C0116",
+    "R0903",
+]
+
+[tool.radon]
+cc_min = "B"
+exclude = ".venv,build,dist,tests"
+show_complexity = true
