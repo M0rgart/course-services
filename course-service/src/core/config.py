@@ -19,7 +19,6 @@ class AppSettings(BaseSettings):
 class DatabaseSettings(BaseSettings):
     url: str = "sqlite+aiosqlite:///./course.db"
     echo: bool = False
-    pool_size: int = 5
 
 
 class JWTSettings(BaseSettings):
@@ -32,7 +31,6 @@ class JWTSettings(BaseSettings):
 
 class SecuritySettings(BaseSettings):
     body_limit_bytes: int = 1_048_576
-    allowed_hosts: list[str] = ["*"]
 
 
 @final
