@@ -10,11 +10,15 @@ from src.web.routers import all_routers
 
 logger = logging.getLogger(__name__)
 
-if __name__ == "src.main":
-    with open("log-config.yaml", "r", encoding="UTF-8") as f:
-        log_config = yaml.safe_load(f)
-    logging.config.dictConfig(log_config)
+
+def build_app():
+    with open("log-config.yaml", encoding="UTF-8") as f:
+        logging.config.dictConfig(yaml.safe_load(f))
 
     settings = get_settings()
-    app = create_app(settings, all_routers, lifespan=lifespan_app)
-    logger.debug("Created app=%s with settings=%s", app, settings)
+    app = create_app(settings, all_routers, lifespan_app)
+    logger.debug("Created app=%s settings=%s", app, settings)
+    return app
+
+
+app = build_app()
