@@ -1,11 +1,13 @@
 import logging
-from typing import Optional, Union
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Header
-from pydantic import conint, constr
+from fastapi import APIRouter, Depends
 
 from src.core import services
+from src.core.db import SessionDep
+from src.core.security import CurrentUserDep, TeacherDep
+from src.web.dependencies import IdempotencyKey, Page, get_page
 from src.web.lifespans import lifespan_service_router
 from src.web.schemas import (
     Artifacts,
@@ -31,20 +33,14 @@ from src.web.schemas import (
 
 logger = logging.getLogger(__name__)
 
-IdempotencyKey = constr(min_length=36, max_length=36)
+PageDep = Annotated[Page, Depends(get_page)]
+
 service_router = APIRouter(
-    prefix="/service",
-    lifespan=lifespan_service_router,
-    tags=["service"],
+    prefix="/service", lifespan=lifespan_service_router, tags=["service"]
 )
 
 
-@service_router.get(
-    "",
-    description="Service info route",
-    response_model=ServiceInfo,
-    status_code=200,
-)
+@service_router.get("", response_model=ServiceInfo, status_code=200)
 def info() -> ServiceInfo:
     return services.get_service_info()
 
@@ -58,26 +54,25 @@ assignments_router = APIRouter(prefix="/api/v1/assignments", tags=["Assignments"
     status_code=201,
     responses={"401": {"model": Error}, "403": {"model": Error}, "422": {"model": Error}},
 )
-def create_assignment(
-    idempotency_key: IdempotencyKey = Header(..., alias="Idempotency-Key"),
-    body: AssignmentCreate = ...,
-) -> Union[Assignment, Error]:
-    """Создать задание."""
-    return services.create_assignment(idempotency_key, body)
+async def create_assignment(
+    idempotency_key: IdempotencyKey,
+    body: AssignmentCreate,
+    user: CurrentUserDep,
+    session: SessionDep,
+) -> Assignment:
+    return await services.create_assignment(session, idempotency_key, body, user.id)
 
 
 @assignments_router.get(
-    "",
-    response_model=Assignments,
-    responses={"401": {"model": Error}},
+    "", response_model=Assignments, responses={"401": {"model": Error}}
 )
-def list_assignments(
-    offset: Optional[conint(ge=0)] = 0,
-    limit: Optional[conint(ge=1, le=100)] = 10,
+async def list_assignments(
+    _user: CurrentUserDep,
+    page: PageDep,
+    session: SessionDep,
     course_id: Optional[UUID] = None,
-) -> Union[Assignments, Error]:
-    """Получить список заданий."""
-    return services.list_assignments(offset, limit, course_id)
+) -> Assignments:
+    return await services.list_assignments(session, page.offset, page.limit, course_id)
 
 
 @assignments_router.get(
@@ -85,9 +80,10 @@ def list_assignments(
     response_model=Assignment,
     responses={"401": {"model": Error}, "404": {"model": Error}},
 )
-def get_assignment(id: UUID) -> Union[Assignment, Error]:
-    """Получить задание."""
-    return services.get_assignment(id)
+async def get_assignment(
+    id: UUID, _user: CurrentUserDep, session: SessionDep
+) -> Assignment:
+    return await services.get_assignment(session, id)
 
 
 @assignments_router.patch(
@@ -95,9 +91,13 @@ def get_assignment(id: UUID) -> Union[Assignment, Error]:
     response_model=Assignment,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-def update_assignment(id: UUID, body: AssignmentUpdate = ...) -> Union[Assignment, Error]:
-    """Частично обновить задание."""
-    return services.update_assignment(id, body)
+async def update_assignment(
+    id: UUID,
+    body: AssignmentUpdate,
+    user: TeacherDep,
+    session: SessionDep,
+) -> Assignment:
+    return await services.update_assignment(session, id, body, user.id)
 
 
 @assignments_router.delete(
@@ -106,28 +106,22 @@ def update_assignment(id: UUID, body: AssignmentUpdate = ...) -> Union[Assignmen
     status_code=204,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-def delete_assignment(id: UUID) -> Optional[Error]:
-    """Удалить задание."""
-    services.delete_assignment(id)
-    return None
+async def delete_assignment(id: UUID, user: TeacherDep, session: SessionDep) -> None:
+    await services.delete_assignment(session, id, user.id)
 
 
 courses_router = APIRouter(prefix="/api/v1/courses", tags=["Courses"])
 
 
-@courses_router.get(
-    "",
-    response_model=Courses,
-    responses={"401": {"model": Error}},
-)
-def list_courses(
-    offset: Optional[conint(ge=0)] = 0,
-    limit: Optional[conint(ge=1, le=100)] = 10,
+@courses_router.get("", response_model=Courses, responses={"401": {"model": Error}})
+async def list_courses(
+    _user: CurrentUserDep,
+    page: PageDep,
+    session: SessionDep,
     sort: Optional[str] = None,
     status: Optional[Status1] = None,
-) -> Union[Courses, Error]:
-    """Получить список доступных курсов."""
-    return services.list_courses(offset, limit, sort, status)
+) -> Courses:
+    return await services.list_courses(session, page.offset, page.limit, sort, status)
 
 
 @courses_router.post(
@@ -141,12 +135,13 @@ def list_courses(
         "422": {"model": Error},
     },
 )
-def create_course(
-    idempotency_key: IdempotencyKey = Header(..., alias="Idempotency-Key"),
-    body: CourseCreate = ...,
-) -> Union[Course, Error]:
-    """Создать новый курс."""
-    return services.create_course(idempotency_key, body)
+async def create_course(
+    idempotency_key: IdempotencyKey,
+    body: CourseCreate,
+    user: TeacherDep,
+    session: SessionDep,
+) -> Course:
+    return await services.create_course(session, idempotency_key, body, user.id)
 
 
 @courses_router.get(
@@ -154,9 +149,10 @@ def create_course(
     response_model=CourseStudents,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-def get_course_students(course_id: UUID) -> Union[CourseStudents, Error]:
-    """Получить студентов курса."""
-    return services.get_course_students(course_id)
+async def get_course_students(
+    course_id: UUID, _user: CurrentUserDep, session: SessionDep
+) -> CourseStudents:
+    return await services.get_course_students(session, course_id)
 
 
 @courses_router.post(
@@ -170,10 +166,13 @@ def get_course_students(course_id: UUID) -> Union[CourseStudents, Error]:
         "409": {"model": Error},
     },
 )
-def enroll_student(course_id: UUID, student_id: UUID) -> Optional[Error]:
-    """Записать студента на курс."""
-    services.enroll_student(course_id, student_id)
-    return None
+async def enroll_student(
+    course_id: UUID,
+    student_id: UUID,
+    user: TeacherDep,
+    session: SessionDep,
+) -> None:
+    await services.enroll_student(session, course_id, student_id, user.id)
 
 
 @courses_router.delete(
@@ -182,10 +181,13 @@ def enroll_student(course_id: UUID, student_id: UUID) -> Optional[Error]:
     status_code=204,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-def unenroll_student(course_id: UUID, student_id: UUID) -> Optional[Error]:
-    """Удалить студента с курса."""
-    services.unenroll_student(course_id, student_id)
-    return None
+async def unenroll_student(
+    course_id: UUID,
+    student_id: UUID,
+    user: TeacherDep,
+    session: SessionDep,
+) -> None:
+    await services.unenroll_student(session, course_id, student_id, user.id)
 
 
 @courses_router.get(
@@ -193,9 +195,8 @@ def unenroll_student(course_id: UUID, student_id: UUID) -> Optional[Error]:
     response_model=Course,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-def get_course(id: UUID) -> Union[Course, Error]:
-    """Получить курс."""
-    return services.get_course(id)
+async def get_course(id: UUID, _user: CurrentUserDep, session: SessionDep) -> Course:
+    return await services.get_course(session, id)
 
 
 @courses_router.patch(
@@ -208,9 +209,10 @@ def get_course(id: UUID) -> Union[Course, Error]:
         "422": {"model": Error},
     },
 )
-def update_course(id: UUID, body: CourseUpdate = ...) -> Union[Course, Error]:
-    """Частично обновить курс."""
-    return services.update_course(id, body)
+async def update_course(
+    id: UUID, body: CourseUpdate, user: TeacherDep, session: SessionDep
+) -> Course:
+    return await services.update_course(session, id, body, user.id)
 
 
 @courses_router.delete(
@@ -219,10 +221,8 @@ def update_course(id: UUID, body: CourseUpdate = ...) -> Union[Course, Error]:
     status_code=204,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-def delete_course(id: UUID) -> Optional[Error]:
-    """Удалить курс."""
-    services.delete_course(id)
-    return None
+async def delete_course(id: UUID, user: TeacherDep, session: SessionDep) -> None:
+    await services.delete_course(session, id, user.id)
 
 
 submissions_router = APIRouter(prefix="/api/v1/submissions", tags=["Submissions"])
@@ -240,26 +240,27 @@ submissions_router = APIRouter(prefix="/api/v1/submissions", tags=["Submissions"
         "429": {"model": Error},
     },
 )
-def create_submission(
-    idempotency_key: IdempotencyKey = Header(..., alias="Idempotency-Key"),
-    body: SubmissionCreate = ...,
-) -> Union[Submission, Error]:
-    """Отправить решение."""
-    return services.create_submission(idempotency_key, body)
+async def create_submission(
+    idempotency_key: IdempotencyKey,
+    body: SubmissionCreate,
+    user: CurrentUserDep,
+    session: SessionDep,
+) -> Submission:
+    return await services.create_submission(session, idempotency_key, body, user.id)
 
 
 @submissions_router.get(
-    "",
-    response_model=Submissions,
-    responses={"401": {"model": Error}},
+    "", response_model=Submissions, responses={"401": {"model": Error}}
 )
-def list_submissions(
-    offset: Optional[conint(ge=0)] = 0,
-    limit: Optional[conint(ge=1, le=100)] = 10,
+async def list_submissions(
+    user: CurrentUserDep,
+    page: PageDep,
+    session: SessionDep,
     assignment_id: Optional[UUID] = None,
-) -> Union[Submissions, Error]:
-    """Получить список сдач."""
-    return services.list_submissions(offset, limit, assignment_id)
+) -> Submissions:
+    return await services.list_submissions(
+        session, page.offset, page.limit, assignment_id, user.id
+    )
 
 
 @submissions_router.get(
@@ -267,9 +268,10 @@ def list_submissions(
     response_model=Submission,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-def get_submission(id: UUID) -> Union[Submission, Error]:
-    """Получить сдачу."""
-    return services.get_submission(id)
+async def get_submission(
+    id: UUID, user: CurrentUserDep, session: SessionDep
+) -> Submission:
+    return await services.get_submission(session, id, user.id)
 
 
 @submissions_router.get(
@@ -277,9 +279,10 @@ def get_submission(id: UUID) -> Union[Submission, Error]:
     response_model=Artifacts,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-def get_submission_artifacts(id: UUID) -> Union[Artifacts, Error]:
-    """Получить артефакты сдачи."""
-    return services.get_submission_artifacts(id)
+async def get_submission_artifacts(
+    id: UUID, user: CurrentUserDep, session: SessionDep
+) -> Artifacts:
+    return await services.get_submission_artifacts(session, id, user.id)
 
 
 reviews_router = APIRouter(prefix="/api/v1/submissions", tags=["Reviews"])
@@ -296,13 +299,14 @@ reviews_router = APIRouter(prefix="/api/v1/submissions", tags=["Reviews"])
         "422": {"model": Error},
     },
 )
-def create_review(
-    idempotency_key: IdempotencyKey = Header(..., alias="Idempotency-Key"),
-    id: UUID = ...,
-    body: ReviewCreate = ...,
-) -> Union[Review, Error]:
-    """Проверить сдачу и выставить оценку."""
-    return services.create_review(idempotency_key, id, body)
+async def create_review(
+    id: UUID,
+    idempotency_key: IdempotencyKey,
+    body: ReviewCreate,
+    user: TeacherDep,
+    session: SessionDep,
+) -> Review:
+    return await services.create_review(session, idempotency_key, id, body, user.id)
 
 
 @reviews_router.get(
@@ -310,9 +314,10 @@ def create_review(
     response_model=Review,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-def get_review(id: UUID) -> Union[Review, Error]:
-    """Получить результат проверки."""
-    return services.get_review(id)
+async def get_review(
+    id: UUID, user: CurrentUserDep, session: SessionDep
+) -> Review:
+    return await services.get_review(session, id, user.id)
 
 
 @reviews_router.patch(
@@ -320,9 +325,13 @@ def get_review(id: UUID) -> Union[Review, Error]:
     response_model=Review,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-def update_review(id: UUID, body: ReviewUpdate = ...) -> Union[Review, Error]:
-    """Обновить комментарий/оценку."""
-    return services.update_review(id, body)
+async def update_review(
+    id: UUID,
+    body: ReviewUpdate,
+    user: TeacherDep,
+    session: SessionDep,
+) -> Review:
+    return await services.update_review(session, id, body, user.id)
 
 
 all_routers = (

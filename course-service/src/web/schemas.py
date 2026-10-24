@@ -1,20 +1,16 @@
-from __future__ import annotations
-
 from datetime import date
-from enum import Enum
-from typing import List, Optional
+from enum import StrEnum
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import (
-    AnyUrl,
-    AwareDatetime,
-    BaseModel,
-    ConfigDict,
-    Field,
-    confloat,
-    conint,
-    constr,
-)
+from pydantic import AnyUrl, AwareDatetime, BaseModel, ConfigDict, Field
+
+Title15 = Annotated[str, Field(min_length=15, max_length=255)]
+Title8 = Annotated[str, Field(min_length=8, max_length=255)]
+Description4096 = Annotated[str, Field(max_length=4096)]
+DescriptionMin2 = Annotated[str, Field(min_length=2, max_length=4096)]
+SubmitLimit = Annotated[int, Field(ge=3, le=10)]
+Mark = Annotated[float, Field(ge=0.0, le=100.0)]
 
 
 class BaseSchemaModel(BaseModel):
@@ -29,19 +25,13 @@ class ServiceInfo(BaseSchemaModel):
     healthy: bool = True
 
 
-class CourseStatus(Enum):
+class CourseStatus(StrEnum):
     DRAFT = "DRAFT"
     ACTIVE = "ACTIVE"
     CLOSED = "CLOSED"
 
 
-class Status1(Enum):
-    DRAFT = "DRAFT"
-    ACTIVE = "ACTIVE"
-    CLOSED = "CLOSED"
-
-
-class SubmissionStatus(Enum):
+class SubmissionStatus(StrEnum):
     SUBMITTED = "SUBMITTED"
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
@@ -49,21 +39,27 @@ class SubmissionStatus(Enum):
     FAILED = "FAILED"
 
 
-class ReviewType(Enum):
+class ReviewType(StrEnum):
     MANUAL = "MANUAL"
     AUTO = "AUTO"
 
 
-class ReviewStatus(Enum):
+class ReviewStatus(StrEnum):
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
 
 
+class Status1(StrEnum):
+    DRAFT = "DRAFT"
+    ACTIVE = "ACTIVE"
+    CLOSED = "CLOSED"
+
+
 class ErrorDetail(BaseSchemaModel):
-    code: str = Field(..., examples=["COURSE_NOT_FOUND"])
-    message: str = Field(..., examples=["Курс не существует"])
-    status: int = Field(..., examples=[404])
-    path: str = Field(..., examples=["/api/v1/courses/"])
+    code: str
+    message: str
+    status: int
+    path: str
     request_id: UUID
 
 
@@ -80,54 +76,61 @@ class Pagination(BaseSchemaModel):
 class CourseCreate(BaseSchemaModel):
     model_config = ConfigDict(extra="forbid")
 
-    title: constr(min_length=15, max_length=255)
-    description: Optional[constr(min_length=2, max_length=4096)] = None
+    title: Title15
+    description: DescriptionMin2 | None = None
     teacher_id: UUID
-    status: Optional[CourseStatus] = None
+    status: CourseStatus | None = None
 
 
 class CourseUpdate(BaseSchemaModel):
     model_config = ConfigDict(extra="forbid")
 
-    title: Optional[constr(min_length=15, max_length=255)] = None
-    description: Optional[constr(min_length=2, max_length=4096)] = None
-    teacher_id: Optional[UUID] = None
-    status: Optional[CourseStatus] = None
+    title: Title15 | None = None
+    description: DescriptionMin2 | None = None
+    teacher_id: UUID | None = None
+    status: CourseStatus | None = None
 
 
 class Course(CourseCreate):
+    model_config = ConfigDict(
+        from_attributes=True,
+        validate_assignment=True,
+        populate_by_name=True,
+        extra="ignore",
+    )
+
     id: UUID
     created_at: AwareDatetime
     updated_at: AwareDatetime
 
 
 class Courses(BaseSchemaModel):
-    data: List[Course]
+    data: list[Course]
     pagination: Pagination
 
 
 class CourseStudents(BaseSchemaModel):
     course_id: UUID
-    students_ids: List[UUID]
+    students_ids: list[UUID]
 
 
 class AssignmentCreate(BaseSchemaModel):
-    title: constr(min_length=8, max_length=255)
-    description: Optional[constr(max_length=4096)] = None
+    title: Title8
+    description: Description4096 | None = None
     course_id: UUID
-    submit_limit: conint(ge=3, le=10) = Field(..., examples=[3])
-    date_start: date = Field(..., examples=["2026-09-01"])
-    date_end: date = Field(..., examples=["2026-12-31"])
-    materials_url: Optional[AnyUrl] = None
+    submit_limit: SubmitLimit
+    date_start: date
+    date_end: date
+    materials_url: AnyUrl | None = None
 
 
 class AssignmentUpdate(BaseSchemaModel):
-    title: Optional[constr(min_length=8, max_length=255)] = None
-    description: Optional[constr(max_length=4096)] = None
-    submit_limit: Optional[conint(ge=3, le=10)] = None
-    date_start: Optional[date] = None
-    date_end: Optional[date] = None
-    materials_url: Optional[AnyUrl] = None
+    title: Title8 | None = None
+    description: Description4096 | None = None
+    submit_limit: SubmitLimit | None = None
+    date_start: date | None = None
+    date_end: date | None = None
+    materials_url: AnyUrl | None = None
 
 
 class Assignment(AssignmentCreate):
@@ -137,29 +140,29 @@ class Assignment(AssignmentCreate):
 
 
 class Assignments(BaseSchemaModel):
-    data: List[Assignment]
+    data: list[Assignment]
     pagination: Pagination
 
 
 class SubmissionCreate(BaseSchemaModel):
     assignment_id: UUID
-    repository_url: Optional[AnyUrl] = None
-    artifacts_url: Optional[AnyUrl] = None
+    repository_url: AnyUrl | None = None
+    artifacts_url: AnyUrl | None = None
 
 
 class Submission(BaseSchemaModel):
     id: UUID
     assignment_id: UUID
     student_id: UUID
-    review_id: Optional[UUID] = None
-    repository_url: Optional[AnyUrl] = None
-    artifacts_url: Optional[AnyUrl] = None
+    review_id: UUID | None = None
+    repository_url: AnyUrl | None = None
+    artifacts_url: AnyUrl | None = None
     submitted_at: AwareDatetime
     status: SubmissionStatus
 
 
 class Submissions(BaseSchemaModel):
-    data: List[Submission]
+    data: list[Submission]
     pagination: Pagination
 
 
@@ -167,25 +170,25 @@ class Artifact(BaseSchemaModel):
     id: UUID
     submission_id: UUID
     url: AnyUrl
-    type: Optional[str] = Field(None, examples=["file"])
+    type: str | None = None
 
 
 class Artifacts(BaseSchemaModel):
-    data: List[Artifact]
+    data: list[Artifact]
 
 
 class ReviewCreate(BaseSchemaModel):
-    type: ReviewType = Field(..., examples=["MANUAL"])
-    feedback: Optional[constr(max_length=4096)] = None
-    mark: confloat(ge=0.0, le=100.0)
-    auto_score: Optional[confloat(ge=0.0, le=100.0)] = None
-    manual: Optional[confloat(ge=0.0, le=100.0)] = None
+    type: ReviewType
+    feedback: Description4096 | None = None
+    mark: Mark
+    auto_score: Mark | None = None
+    manual: Mark | None = None
 
 
 class ReviewUpdate(BaseSchemaModel):
-    feedback: Optional[constr(max_length=4096)] = None
-    mark: Optional[confloat(ge=0.0, le=100.0)] = None
-    manual: Optional[confloat(ge=0.0, le=100.0)] = None
+    feedback: Description4096 | None = None
+    mark: Mark | None = None
+    manual: Mark | None = None
 
 
 class Review(ReviewCreate):
