@@ -8,7 +8,7 @@ class AppSettings(BaseSettings):
     title: str = "Course service title"
     description: str = "Course service description"
     summary: str = "Course service summary"
-    version: str = "0.1.0"
+    version: str = "1.0.0"
     docs_url: str = "/docs"
     redoc_url: str = "/redoc"
     openapi_url: str = "/openapi.json"
@@ -16,9 +16,31 @@ class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="allow")
 
 
+class DatabaseSettings(BaseSettings):
+    url: str = "sqlite+aiosqlite:///./course.db"
+    echo: bool = False
+    pool_size: int = 5
+
+
+class JWTSettings(BaseSettings):
+    secret: str = "change-me-in-env"
+    algorithm: str = "HS256"
+    issuer: str = "course-service"
+    audience: str = "course-service-clients"
+    leeway: int = 5
+
+
+class SecuritySettings(BaseSettings):
+    body_limit_bytes: int = 1_048_576
+    allowed_hosts: list[str] = ["*"]
+
+
 @final
 class Settings(BaseSettings):
     app: AppSettings = AppSettings()
+    db: DatabaseSettings = DatabaseSettings()
+    jwt: JWTSettings = JWTSettings()
+    security: SecuritySettings = SecuritySettings()
 
     model_config = SettingsConfigDict(
         extra="allow",

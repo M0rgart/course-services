@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import FastAPI, Header
 from pydantic import conint, constr
 
-from .models import (
+from models import (
     Artifacts,
     Assignment,
     AssignmentCreate,
