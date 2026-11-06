@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Optional
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -7,19 +7,19 @@ from fastapi import APIRouter, Depends
 from src.core import services
 from src.core.db import SessionDep
 from src.core.security import CurrentUserDep, TeacherDep
-from src.web.dependencies import IdempotencyKey, Page, get_page
+from src.web.dependencies import ExternalServiceDep, IdempotencyKey, Page, get_page
 from src.web.lifespans import lifespan_service_router
 from src.web.schemas import (
     Artifacts,
     Assignment,
     AssignmentCreate,
-    AssignmentUpdate,
     Assignments,
+    AssignmentUpdate,
     Course,
     CourseCreate,
+    Courses,
     CourseStudents,
     CourseUpdate,
-    Courses,
     Error,
     Review,
     ReviewCreate,
@@ -70,7 +70,7 @@ async def list_assignments(
     _user: CurrentUserDep,
     page: PageDep,
     session: SessionDep,
-    course_id: Optional[UUID] = None,
+    course_id: UUID | None = None,
 ) -> Assignments:
     return await services.list_assignments(session, page.offset, page.limit, course_id)
 
@@ -118,8 +118,8 @@ async def list_courses(
     _user: CurrentUserDep,
     page: PageDep,
     session: SessionDep,
-    sort: Optional[str] = None,
-    status: Optional[Status1] = None,
+    sort: str | None = None,
+    status: Status1 | None = None,
 ) -> Courses:
     return await services.list_courses(session, page.offset, page.limit, sort, status)
 
@@ -256,7 +256,7 @@ async def list_submissions(
     user: CurrentUserDep,
     page: PageDep,
     session: SessionDep,
-    assignment_id: Optional[UUID] = None,
+    assignment_id: UUID | None = None,
 ) -> Submissions:
     return await services.list_submissions(
         session, page.offset, page.limit, assignment_id, user.id
@@ -297,6 +297,8 @@ reviews_router = APIRouter(prefix="/api/v1/submissions", tags=["Reviews"])
         "403": {"model": Error},
         "404": {"model": Error},
         "422": {"model": Error},
+        "502": {"model": Error},
+        "504": {"model": Error},
     },
 )
 async def create_review(
@@ -305,8 +307,11 @@ async def create_review(
     body: ReviewCreate,
     user: TeacherDep,
     session: SessionDep,
+    external_service: ExternalServiceDep,
 ) -> Review:
-    return await services.create_review(session, idempotency_key, id, body, user.id)
+    return await services.create_review(
+        session, idempotency_key, id, body, user.id, external_service
+    )
 
 
 @reviews_router.get(

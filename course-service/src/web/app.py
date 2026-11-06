@@ -2,6 +2,7 @@ import logging
 from collections.abc import AsyncIterator, Iterable
 from contextlib import asynccontextmanager
 from typing import Any
+from uuid import UUID
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -11,6 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from src.core.config import Settings
 from src.core.db import Database
 from src.core.exceptions import DomainError
+from src.core.external import AsyncExternalService
 from src.web.middlewares import install_middlewares
 from src.web.schemas import Error, ErrorDetail
 
@@ -26,11 +28,13 @@ def _error_response(
         status=status,
         path=str(request.url.path),
         request_id=getattr(
-            request.state, "request_id", "00000000-0000-0000-0000-000000000000"
+            request.state, "request_id", UUID(int=0)
         ),
     )
     return JSONResponse(
-        status_code=status, content=Error(error=detail).model_dump(mode="json")
+        status_code=status,
+        content=Error(error=detail).model_dump(mode="json"),
+        media_type="application/problem+json",
     )
 
 
@@ -39,6 +43,7 @@ def _make_lifespan(user_lifespan):
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings: Settings = app.state.settings
         app.state.db = Database(settings)
+        app.state.external_service = AsyncExternalService(settings.external)
         async with user_lifespan(app):
             try:
                 yield
@@ -58,7 +63,7 @@ def create_app(
     app = FastAPI(lifespan=_make_lifespan(user_lifespan), **app_params)
     app.state.settings = settings
 
-    install_middlewares(app)
+    install_middlewares(app, settings)
 
     @app.exception_handler(DomainError)
     async def _domain_handler(request: Request, exc: DomainError) -> JSONResponse:

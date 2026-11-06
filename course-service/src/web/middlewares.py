@@ -1,19 +1,23 @@
 import logging
 import time
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
-from src.core.config import get_settings
+from src.core.config import Settings
 
 logger = logging.getLogger(__name__)
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
-        request_id = request.headers.get("X-Request-Id") or str(uuid4())
+        request_id_header = request.headers.get("X-Request-Id")
+        try:
+            request_id = str(UUID(request_id_header)) if request_id_header else str(uuid4())
+        except ValueError:
+            request_id = str(uuid4())
         request.state.request_id = request_id
         response = await call_next(request)
         response.headers["X-Request-Id"] = request_id
@@ -36,9 +40,19 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next) -> Response:
         length = request.headers.get("content-length")
-        if length is not None and int(length) > self.max_bytes:
+        if length is not None and length.isdecimal() and int(length) > self.max_bytes:
             return JSONResponse(
-                status_code=413, content={"detail": "Request body too large"}
+                status_code=413,
+                content={
+                    "error": {
+                        "code": "BODY_TOO_LARGE",
+                        "message": "Request body too large",
+                        "status": 413,
+                        "path": request.url.path,
+                        "request_id": request.state.request_id,
+                    }
+                },
+                media_type="application/problem+json",
             )
         return await call_next(request)
 
@@ -59,8 +73,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def install_middlewares(app) -> None:
-    settings = get_settings()
+def install_middlewares(app, settings: Settings) -> None:
     app.add_middleware(LoggingMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.security.body_limit_bytes)
