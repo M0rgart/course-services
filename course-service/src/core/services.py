@@ -18,18 +18,19 @@ from src.core.exceptions import (
     SubmissionNotFoundError,
     ValidationError,
 )
+from src.core.external import AsyncExternalService, ExternalServiceError
 from src.web.schemas import (
     Artifact,
     Artifacts,
     Assignment,
     AssignmentCreate,
-    AssignmentUpdate,
     Assignments,
+    AssignmentUpdate,
     Course,
     CourseCreate,
+    Courses,
     CourseStudents,
     CourseUpdate,
-    Courses,
     Pagination,
     Review,
     ReviewCreate,
@@ -93,10 +94,16 @@ async def list_courses(
 
     if sort:
         for raw in sort.split(","):
-            desc = raw.startswith("-")
-            field_name = raw.lstrip("-")
+            field_name, separator, direction = raw.partition(":")
+            if separator:
+                if direction.lower() not in {"asc", "desc"}:
+                    raise ValidationError(f"Unknown sort direction: {direction}")
+                desc = direction.lower() == "desc"
+            else:
+                desc = field_name.startswith("-")
+                field_name = field_name.removeprefix("-")
             column = getattr(models.Course, field_name, None)
-            if column is None:
+            if column is None or field_name not in models.Course.__table__.columns:
                 raise ValidationError(f"Unknown sort field: {field_name}")
             stmt = stmt.order_by(column.desc() if desc else column.asc())
 
@@ -391,25 +398,51 @@ async def create_review(
     submission_id: UUID,
     payload: ReviewCreate,
     actor_id: UUID,
+    external_service: AsyncExternalService,
 ) -> Review:
     submission = await session.get(models.Submission, submission_id)
     if submission is None:
         raise SubmissionNotFoundError()
-    if submission.review_id is not None:
-        raise ConflictError("Submission already reviewed")
+    assignment = await session.get(models.Assignment, submission.assignment_id)
+    course = (
+        await session.get(models.Course, assignment.course_id) if assignment is not None else None
+    )
+    if course is None or course.teacher_id != actor_id:
+        raise ForbiddenError()
 
     payload_json = payload.model_dump_json()
     cached = await _check_idempotency(session, key, payload_json)
     if cached is not None:
         return Review.model_validate(cached)
+    if submission.review_id is not None:
+        raise ConflictError("Submission already reviewed")
+
+    mark = payload.mark
+    auto_score = payload.auto_score
+    feedback = payload.feedback
+    if payload.type.value == "AUTO":
+        external_result = await external_service.evaluate_submission(
+            submission_id, submission.assignment_id, payload.mark
+        )
+        score = external_result.get("auto_score")
+        if (
+            not isinstance(score, (float, int))
+            or isinstance(score, bool)
+            or not 0 <= score <= 100
+        ):
+            raise ExternalServiceError("Внешний сервис вернул некорректную оценку")
+        auto_score = float(score)
+        mark = auto_score
+        if isinstance(external_result.get("feedback"), str):
+            feedback = external_result["feedback"]
 
     review = models.Review(
         submission_id=submission_id,
         reviewer_id=actor_id,
         type=models.ReviewType(payload.type),
-        feedback=payload.feedback,
-        mark=payload.mark,
-        auto_score=payload.auto_score,
+        feedback=feedback,
+        mark=mark,
+        auto_score=auto_score,
         manual=payload.manual,
         status=models.ReviewStatus.COMPLETED,
     )
@@ -420,9 +453,9 @@ async def create_review(
     submission.status = models.SubmissionStatus.COMPLETED
     await session.flush()
 
-    result = Review.model_validate(review)
-    await _remember_idempotency(session, key, payload_json, result.model_dump())
-    return result
+    response = Review.model_validate(review)
+    await _remember_idempotency(session, key, payload_json, response.model_dump())
+    return response
 
 
 async def get_review(
