@@ -1,0 +1,111 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/submissions/:id/review"
+  method: GET
+  headers:
+    Accept: application/json
+  pathVariables:
+    id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "type": "MANUAL",
+        "mark": 46.47628962647584,
+        "id": "78c79163-0ec9-6dd1-8493-05919f7bd09d",
+        "submission_id": "ce2b1eb6-56d7-3b8d-5bec-2273ff878634",
+        "reviewer_id": "d20370bb-f294-42a7-d9df-c7411bd6aed5",
+        "created_at": "1989-07-10T01:09:41.799Z",
+        "status": "PROCESSING",
+        "feedback": "string",
+        "auto_score": 20.023412801588382,
+        "manual": 60.30361071682356
+      }
+    $type: |-
+      {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "MANUAL",
+                  "AUTO"
+                ],
+                "example": "MANUAL"
+              },
+              "feedback": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "mark": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "format": "float"
+              },
+              "auto_score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "format": "float"
+              },
+              "manual": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "format": "float"
+              }
+            },
+            "required": [
+              "type",
+              "mark"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "submission_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reviewer_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PROCESSING",
+                  "COMPLETED"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "submission_id",
+              "reviewer_id",
+              "created_at",
+              "status"
+            ]
+          }
+        ]
+      }
+order: 1000

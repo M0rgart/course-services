@@ -1,0 +1,83 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/submissions"
+  method: POST
+  headers:
+    - key: Idempotency-Key
+      value: 00000000-0000-0000-0000-000000000000
+      disabled: false
+      description: ""
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: application/problem+json
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  body:
+    type: json
+    content: |-
+      {
+        "assignment_id": "e7f93b34-c8ea-239d-434f-ba4391a98684",
+        "repository_url": "http://dzavVXPCtGVyLcJzIPP.ogzjvVwXiF,3LYNdo7GmiyRJ7Ig5QIIbLEquPNGfY-Dq9HVmrQq7piwqnxNpn31Q0G8",
+        "artifacts_url": "https://iRcQUaZK.vsvYL+hLP2tRpWnOB8lXeLFROxm0OocKg.IUjRX3rcYzOd"
+      }
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/problem+json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Недостаточно прав",
+          "status": 403,
+          "path": "/api/v1/courses",
+          "request_id": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "COURSE_NOT_FOUND"
+              },
+              "message": {
+                "type": "string",
+                "example": "Курс не существует"
+              },
+              "status": {
+                "type": "integer",
+                "example": 404
+              },
+              "path": {
+                "type": "string",
+                "example": "/api/v1/courses/"
+              },
+              "request_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "status",
+              "path",
+              "request_id"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+order: 3000

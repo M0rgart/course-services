@@ -1,0 +1,72 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/submissions?offset=0&limit=10&assignment_id=411cf55d-85c7-5f95-e284-d89ba4e998da"
+  method: GET
+  headers:
+    Accept: application/problem+json
+  queryParams:
+    offset: "0"
+    limit: "10"
+    assignment_id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: application/problem+json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "TOKEN_MISSING",
+          "message": "Токен отсутствует",
+          "status": 401,
+          "path": "/api/v1/courses",
+          "request_id": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "COURSE_NOT_FOUND"
+              },
+              "message": {
+                "type": "string",
+                "example": "Курс не существует"
+              },
+              "status": {
+                "type": "integer",
+                "example": 404
+              },
+              "path": {
+                "type": "string",
+                "example": "/api/v1/courses/"
+              },
+              "request_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "status",
+              "path",
+              "request_id"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+order: 2000

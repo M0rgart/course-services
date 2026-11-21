@@ -1,0 +1,76 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/courses?offset=0&limit=10&sort=created_at:desc&status=CLOSED"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: offset
+    value: "0"
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "default": 0,
+            "minimum": 0
+          }
+        }
+      }
+  - key: limit
+    value: "10"
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      }
+  - key: sort
+    value: created_at:desc
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "example": "created_at:desc"
+          }
+        }
+      }
+  - key: status
+    value: CLOSED
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "CLOSED"
+            ]
+          }
+        }
+      }
+body:
+  type: text
+  content: ""
+settings: {}
+examples: ./.resources/Получить список доступных курсов.resources/examples
+order: 1000

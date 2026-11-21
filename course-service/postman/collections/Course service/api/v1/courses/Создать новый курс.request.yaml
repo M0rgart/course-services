@@ -1,0 +1,77 @@
+$kind: http-request
+description: Доступно только администратору
+url: "{{baseUrl}}/api/v1/courses"
+method: POST
+headers:
+  - key: Idempotency-Key
+    value: 00000000-0000-0000-0000-000000000000
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "example": "00000000-0000-0000-0000-000000000000"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "stringstringstring",
+      "teacher_id": "4a264d57-6b98-33e9-79b0-6a1dd630d5a2",
+      "description": "A course description long enough to satisfy the minimum length in the API contract.",
+      "status": "ACTIVE"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 256
+        },
+        "description": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 2048
+        },
+        "teacher_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "DRAFT",
+            "ACTIVE",
+            "CLOSED"
+          ],
+          "example": "ACTIVE"
+        }
+      },
+      "required": [
+        "title",
+        "teacher_id"
+      ]
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/Создать новый курс.resources/examples
+order: 2000

@@ -1,0 +1,21 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/courses/:course_id/students/:student_id"
+  method: DELETE
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  pathVariables:
+    course_id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+    student_id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 204
+  statusText: No Content
+  body:
+    type: text
+    content: ""
+order: 1000

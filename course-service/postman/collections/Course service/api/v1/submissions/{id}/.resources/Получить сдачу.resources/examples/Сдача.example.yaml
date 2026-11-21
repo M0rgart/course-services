@@ -1,0 +1,81 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/submissions/:id"
+  method: GET
+  headers:
+    Accept: application/json
+  pathVariables:
+    id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "id": "4cb7a481-7c78-cf03-c142-a089c9aa3055",
+        "assignment_id": "9fe78c16-47cf-5e69-a62f-cb294a9c4847",
+        "student_id": "5277ec44-049d-69a0-d30a-d2fc66e9acce",
+        "status": "PENDING",
+        "submitted_at": "1966-04-23T08:15:52.027Z",
+        "review_id": "156c4532-ed82-795c-db01-0eb57a44a45c",
+        "repository_url": "http://end.kyqjzB.X6BMi2I1z+6fnuy",
+        "artifacts_url": "https://ofk.ciuvTga5S-ZeXjz7EYh6nWHEvWCEXF"
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assignment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "review_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "repository_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "artifacts_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "PENDING",
+              "PROCESSING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "assignment_id",
+          "student_id",
+          "status",
+          "submitted_at"
+        ]
+      }
+order: 1000

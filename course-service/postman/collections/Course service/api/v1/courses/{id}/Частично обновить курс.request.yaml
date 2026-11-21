@@ -1,0 +1,70 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/courses/:id"
+method: PATCH
+headers:
+  Content-Type: application/json
+  Accept: application/json
+pathVariables:
+  - key: id
+    value: 411cf55d-85c7-5f95-e284-d89ba4e998da
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+body:
+  type: json
+  content: |-
+    {
+      "title": "stringstringstring",
+      "description": "A course description long enough to satisfy the minimum length in the API contract.",
+      "teacher_id": "79a17bef-4f39-b729-119d-281c634453c9",
+      "status": "ACTIVE"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 256
+        },
+        "description": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 2048
+        },
+        "teacher_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "DRAFT",
+            "ACTIVE",
+            "CLOSED"
+          ],
+          "example": "ACTIVE"
+        }
+      }
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/Частично обновить курс.resources/examples
+order: 2000

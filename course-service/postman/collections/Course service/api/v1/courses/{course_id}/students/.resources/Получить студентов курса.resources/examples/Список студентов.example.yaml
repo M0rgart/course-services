@@ -1,0 +1,48 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/courses/:course_id/students"
+  method: GET
+  headers:
+    Accept: application/json
+  pathVariables:
+    course_id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "course_id": "da945815-fb9d-6f27-45b7-adc8e77a68eb",
+        "students_ids": [
+          "1d1b80d0-d124-1896-a03f-8abe7c439612",
+          "07f674b2-7dd0-bd4e-8883-8a537cde755f"
+        ]
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "students_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "course_id",
+          "students_ids"
+        ]
+      }
+order: 1000

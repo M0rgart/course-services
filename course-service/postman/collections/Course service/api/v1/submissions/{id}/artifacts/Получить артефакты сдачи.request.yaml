@@ -1,0 +1,30 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/submissions/:id/artifacts"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  - key: id
+    value: 411cf55d-85c7-5f95-e284-d89ba4e998da
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+body:
+  type: text
+  content: ""
+settings: {}
+examples: ./.resources/Получить артефакты сдачи.resources/examples
+order: 1000

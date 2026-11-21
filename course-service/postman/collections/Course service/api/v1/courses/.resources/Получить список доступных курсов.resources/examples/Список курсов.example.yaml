@@ -1,0 +1,140 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/courses?offset=0&limit=10&sort=created_at:desc&status=CLOSED"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    offset: "0"
+    limit: "10"
+    sort: created_at:desc
+    status: CLOSED
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "data": [
+          {
+            "title": "stringstringstring",
+            "teacher_id": "5a25f5d5-90fc-b8b2-8386-90e814644bd9",
+            "id": "9f652f13-2711-3ec6-d651-ac9927ea8b83",
+            "created_at": "2002-10-09T13:00:38.478Z",
+            "updated_at": "1946-11-07T23:55:00.454Z",
+            "description": "A course description long enough to satisfy the minimum length in the API contract.",
+            "status": "ACTIVE"
+          },
+          {
+            "title": "stringstringstring",
+            "teacher_id": "2629b233-9082-a328-e436-ba585116777f",
+            "id": "7a1a15d2-5e64-4452-7601-b0f58988561e",
+            "created_at": "1965-05-19T10:52:26.621Z",
+            "updated_at": "2020-07-07T03:06:23.462Z",
+            "description": "A course description long enough to satisfy the minimum length in the API contract.",
+            "status": "ACTIVE"
+          }
+        ],
+        "pagination": {
+          "offset": 822,
+          "limit": 2202,
+          "total": 7099
+        }
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 16,
+                      "maxLength": 256
+                    },
+                    "description": {
+                      "type": "string",
+                      "minLength": 64,
+                      "maxLength": 2048
+                    },
+                    "teacher_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "DRAFT",
+                        "ACTIVE",
+                        "CLOSED"
+                      ],
+                      "example": "ACTIVE"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "teacher_id"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "created_at",
+                    "updated_at"
+                  ]
+                }
+              ]
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "offset": {
+                "type": "integer"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "total": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "offset",
+              "limit",
+              "total"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ]
+      }
+order: 1000

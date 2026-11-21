@@ -1,0 +1,94 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/submissions"
+  method: POST
+  headers:
+    - key: Idempotency-Key
+      value: 00000000-0000-0000-0000-000000000000
+      disabled: false
+      description: ""
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: application/json
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  body:
+    type: json
+    content: |-
+      {
+        "assignment_id": "e7f93b34-c8ea-239d-434f-ba4391a98684",
+        "repository_url": "http://dzavVXPCtGVyLcJzIPP.ogzjvVwXiF,3LYNdo7GmiyRJ7Ig5QIIbLEquPNGfY-Dq9HVmrQq7piwqnxNpn31Q0G8",
+        "artifacts_url": "https://iRcQUaZK.vsvYL+hLP2tRpWnOB8lXeLFROxm0OocKg.IUjRX3rcYzOd"
+      }
+response:
+  statusCode: 201
+  statusText: Created
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "id": "4cb7a481-7c78-cf03-c142-a089c9aa3055",
+        "assignment_id": "9fe78c16-47cf-5e69-a62f-cb294a9c4847",
+        "student_id": "5277ec44-049d-69a0-d30a-d2fc66e9acce",
+        "status": "PENDING",
+        "submitted_at": "1966-04-23T08:15:52.027Z",
+        "review_id": "156c4532-ed82-795c-db01-0eb57a44a45c",
+        "repository_url": "http://end.kyqjzB.X6BMi2I1z+6fnuy",
+        "artifacts_url": "https://ofk.ciuvTga5S-ZeXjz7EYh6nWHEvWCEXF"
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assignment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "review_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "repository_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "artifacts_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "PENDING",
+              "PROCESSING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "assignment_id",
+          "student_id",
+          "status",
+          "submitted_at"
+        ]
+      }
+order: 1000

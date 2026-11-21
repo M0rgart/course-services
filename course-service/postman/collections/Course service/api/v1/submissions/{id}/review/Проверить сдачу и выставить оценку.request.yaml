@@ -1,0 +1,103 @@
+$kind: http-request
+description: Доступно только преподавателю
+url: "{{baseUrl}}/api/v1/submissions/:id/review"
+method: POST
+headers:
+  - key: Idempotency-Key
+    value: 00000000-0000-0000-0000-000000000000
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "example": "00000000-0000-0000-0000-000000000000"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+pathVariables:
+  - key: id
+    value: 411cf55d-85c7-5f95-e284-d89ba4e998da
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+body:
+  type: json
+  content: |-
+    {
+      "type": "MANUAL",
+      "mark": 93.15095718071056,
+      "feedback": "string",
+      "auto_score": 55.484997106383496,
+      "manual": 96.05070811816108
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "MANUAL",
+            "AUTO"
+          ],
+          "example": "MANUAL"
+        },
+        "feedback": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "mark": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "format": "float"
+        },
+        "auto_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "format": "float"
+        },
+        "manual": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "format": "float"
+        }
+      },
+      "required": [
+        "type",
+        "mark"
+      ]
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/Проверить сдачу и выставить оценку.resources/examples
+order: 1000

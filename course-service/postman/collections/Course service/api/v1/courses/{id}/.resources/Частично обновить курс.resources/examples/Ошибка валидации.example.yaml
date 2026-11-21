@@ -1,0 +1,82 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/courses/:id"
+  method: PATCH
+  headers:
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: application/problem+json
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  pathVariables:
+    id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: json
+    content: |-
+      {
+        "title": "stringstringstring",
+        "description": "A course description long enough to satisfy the minimum length in the API contract.",
+        "teacher_id": "79a17bef-4f39-b729-119d-281c634453c9",
+        "status": "ACTIVE"
+      }
+response:
+  statusCode: 422
+  statusText: Unprocessable Entity (WebDAV) (RFC 4918)
+  headers:
+    Content-Type: application/problem+json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Ошибка валидации",
+          "status": 422,
+          "path": "/api/v1/courses",
+          "request_id": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "COURSE_NOT_FOUND"
+              },
+              "message": {
+                "type": "string",
+                "example": "Курс не существует"
+              },
+              "status": {
+                "type": "integer",
+                "example": 404
+              },
+              "path": {
+                "type": "string",
+                "example": "/api/v1/courses/"
+              },
+              "request_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "status",
+              "path",
+              "request_id"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+order: 5000

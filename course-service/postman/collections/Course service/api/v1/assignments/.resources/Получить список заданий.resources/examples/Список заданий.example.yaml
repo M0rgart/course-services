@@ -1,0 +1,158 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/assignments?offset=0&limit=10&course_id=411cf55d-85c7-5f95-e284-d89ba4e998da"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    offset: "0"
+    limit: "10"
+    course_id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "data": [
+          {
+            "title": "stringstring",
+            "course_id": "91ac6785-1f14-e065-365c-ca1fbd78c7b0",
+            "date_start": "2026-09-01",
+            "date_end": "2026-12-31",
+            "submit_limit": 3,
+            "id": "826d718f-58a6-97ae-7c83-0ffab489d005",
+            "created_at": "1996-02-12T08:55:02.754Z",
+            "updated_at": "1990-08-04T17:34:05.601Z",
+            "description": "string",
+            "materials_url": "http://txqKlmDNvjF.ssrodycaV9fl5U+mdp0czrStvwkBn.I6XFXyjxfm8evKEH7O"
+          },
+          {
+            "title": "stringstring",
+            "course_id": "d0bac489-c0be-b35c-ac2c-7c8744b9159c",
+            "date_start": "2026-09-01",
+            "date_end": "2026-12-31",
+            "submit_limit": 3,
+            "id": "3600133e-ceff-06ae-69c2-a156c7f0b2c9",
+            "created_at": "1987-06-17T15:58:41.753Z",
+            "updated_at": "1966-05-17T05:51:43.514Z",
+            "description": "string",
+            "materials_url": "https://fibeTSCsELawGnL.raW6dNbtwX+gaSmbDMDbnXJweoEweoEjWA"
+          }
+        ],
+        "pagination": {
+          "offset": 9832,
+          "limit": 7192,
+          "total": 8509
+        }
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 8,
+                      "maxLength": 255
+                    },
+                    "description": {
+                      "type": "string",
+                      "maxLength": 4096
+                    },
+                    "course_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "submit_limit": {
+                      "type": "integer",
+                      "minimum": 3,
+                      "maximum": 10,
+                      "example": 3
+                    },
+                    "date_start": {
+                      "type": "string",
+                      "example": "2026-09-01",
+                      "format": "date"
+                    },
+                    "date_end": {
+                      "type": "string",
+                      "example": "2026-12-31",
+                      "format": "date"
+                    },
+                    "materials_url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "course_id",
+                    "date_start",
+                    "date_end",
+                    "submit_limit"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "created_at",
+                    "updated_at"
+                  ]
+                }
+              ]
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "offset": {
+                "type": "integer"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "total": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "offset",
+              "limit",
+              "total"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ]
+      }
+order: 1000

@@ -1,0 +1,133 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/submissions?offset=0&limit=10&assignment_id=411cf55d-85c7-5f95-e284-d89ba4e998da"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    offset: "0"
+    limit: "10"
+    assignment_id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "data": [
+          {
+            "id": "c901acd4-b30c-ab0c-30f9-e2f772925a86",
+            "assignment_id": "0d526cf0-4049-6b03-824d-ad98bf1cf7ce",
+            "student_id": "a0fc0f8c-37a0-4a46-af03-beda443785fd",
+            "status": "PROCESSING",
+            "submitted_at": "1955-10-27T14:34:18.121Z",
+            "review_id": "e6accea1-c703-e6d3-7cc9-92f2b68a0014",
+            "repository_url": "https://aMIRWKPdFIK.vwqwA.9OCDjPtdR0Z5f9.F4eopmNnbwWRPJXVUGO4-Qd+E-rUMX",
+            "artifacts_url": "https://WrUKAl.vdwox9Vhaivfytx0TANUI5"
+          },
+          {
+            "id": "0549c14a-729c-f95e-b969-90a4a120bc88",
+            "assignment_id": "7ad392e0-67fe-a39f-86ee-d0bfe2e83b24",
+            "student_id": "60b1c9c4-f08e-363f-d2b8-bc93413e7bd4",
+            "status": "PROCESSING",
+            "submitted_at": "1975-09-09T20:25:21.350Z",
+            "review_id": "e9d729da-035f-8856-42ab-a0e59be1a8c4",
+            "repository_url": "https://ZbMizqVLLyhu.avlKtY1ocUOPbOqXjgJuWcjWIj9pggIumW7MZqgtxJ,YjI,HBUic",
+            "artifacts_url": "https://CqhkfMzWavFapCLKxBNtatRGoNPTu.qwaHKRTnfkurQkKiMLr14eyjonq046JOeNGhWjB4wQmQD8ob.E"
+          }
+        ],
+        "pagination": {
+          "offset": 528,
+          "limit": 3749,
+          "total": 9151
+        }
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "assignment_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "student_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "review_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "repository_url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "artifacts_url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "submitted_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SUBMITTED",
+                    "PENDING",
+                    "PROCESSING",
+                    "COMPLETED",
+                    "FAILED"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "assignment_id",
+                "student_id",
+                "status",
+                "submitted_at"
+              ]
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "offset": {
+                "type": "integer"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "total": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "offset",
+              "limit",
+              "total"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ]
+      }
+order: 1000

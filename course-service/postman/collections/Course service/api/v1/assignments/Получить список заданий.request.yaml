@@ -1,0 +1,58 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/assignments?offset=0&limit=10&course_id=411cf55d-85c7-5f95-e284-d89ba4e998da"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: offset
+    value: "0"
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "default": 0,
+            "minimum": 0
+          }
+        }
+      }
+  - key: limit
+    value: "10"
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      }
+  - key: course_id
+    value: 411cf55d-85c7-5f95-e284-d89ba4e998da
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+body:
+  type: text
+  content: ""
+settings: {}
+examples: ./.resources/Получить список заданий.resources/examples
+order: 2000

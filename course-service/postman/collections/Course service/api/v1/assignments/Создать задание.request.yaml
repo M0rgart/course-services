@@ -1,0 +1,93 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/assignments"
+method: POST
+headers:
+  - key: Idempotency-Key
+    value: 00000000-0000-0000-0000-000000000000
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "example": "00000000-0000-0000-0000-000000000000"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "stringstring",
+      "course_id": "425b4b44-4c65-b3ff-a30a-4ada98355b80",
+      "date_start": "2026-09-01",
+      "date_end": "2026-12-31",
+      "submit_limit": 3,
+      "description": "string",
+      "materials_url": "http://nDSiblxWyHZnZrgikdGimHaolUJrTt.pwboejgRfZ7JicPDm,fHsLZUF0RnPezvCGe+3utdcpApq7Yfe2rBzkIwfe"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 255
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "course_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "submit_limit": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 10,
+          "example": 3
+        },
+        "date_start": {
+          "type": "string",
+          "example": "2026-09-01",
+          "format": "date"
+        },
+        "date_end": {
+          "type": "string",
+          "example": "2026-12-31",
+          "format": "date"
+        },
+        "materials_url": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "title",
+        "course_id",
+        "date_start",
+        "date_end",
+        "submit_limit"
+      ]
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/Создать задание.resources/examples
+order: 1000

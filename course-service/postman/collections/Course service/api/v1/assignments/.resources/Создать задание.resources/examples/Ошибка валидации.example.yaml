@@ -1,0 +1,87 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/assignments"
+  method: POST
+  headers:
+    - key: Idempotency-Key
+      value: 00000000-0000-0000-0000-000000000000
+      disabled: false
+      description: ""
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: application/problem+json
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  body:
+    type: json
+    content: |-
+      {
+        "title": "stringstring",
+        "course_id": "425b4b44-4c65-b3ff-a30a-4ada98355b80",
+        "date_start": "2026-09-01",
+        "date_end": "2026-12-31",
+        "submit_limit": 3,
+        "description": "string",
+        "materials_url": "http://nDSiblxWyHZnZrgikdGimHaolUJrTt.pwboejgRfZ7JicPDm,fHsLZUF0RnPezvCGe+3utdcpApq7Yfe2rBzkIwfe"
+      }
+response:
+  statusCode: 422
+  statusText: Unprocessable Entity (WebDAV) (RFC 4918)
+  headers:
+    Content-Type: application/problem+json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Ошибка валидации",
+          "status": 422,
+          "path": "/api/v1/courses",
+          "request_id": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "COURSE_NOT_FOUND"
+              },
+              "message": {
+                "type": "string",
+                "example": "Курс не существует"
+              },
+              "status": {
+                "type": "integer",
+                "example": 404
+              },
+              "path": {
+                "type": "string",
+                "example": "/api/v1/courses/"
+              },
+              "request_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "status",
+              "path",
+              "request_id"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+order: 4000

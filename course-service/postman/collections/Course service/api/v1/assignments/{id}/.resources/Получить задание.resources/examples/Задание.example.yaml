@@ -1,0 +1,104 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/assignments/:id"
+  method: GET
+  headers:
+    Accept: application/json
+  pathVariables:
+    id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "title": "stringstring",
+        "course_id": "ae67c4fb-6d03-25e3-72bb-98dbdca49ed7",
+        "date_start": "2026-09-01",
+        "date_end": "2026-12-31",
+        "submit_limit": 3,
+        "id": "06be44d3-7e50-1cc7-20a4-4eff88f82388",
+        "created_at": "1949-07-04T15:28:35.760Z",
+        "updated_at": "1991-01-22T07:05:25.501Z",
+        "description": "string",
+        "materials_url": "http://Pg.obudWX6wFycock+4sNhqVESR4gh9.aLH9Usg6AXE9SN0i86Xj6,ebcM5Lg7GgFc"
+      }
+    $type: |-
+      {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 255
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "course_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "submit_limit": {
+                "type": "integer",
+                "minimum": 3,
+                "maximum": 10,
+                "example": 3
+              },
+              "date_start": {
+                "type": "string",
+                "example": "2026-09-01",
+                "format": "date"
+              },
+              "date_end": {
+                "type": "string",
+                "example": "2026-12-31",
+                "format": "date"
+              },
+              "materials_url": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "required": [
+              "title",
+              "course_id",
+              "date_start",
+              "date_end",
+              "submit_limit"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "created_at",
+              "updated_at"
+            ]
+          }
+        ]
+      }
+order: 1000

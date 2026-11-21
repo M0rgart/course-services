@@ -1,0 +1,75 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/assignments/:id"
+method: PATCH
+headers:
+  Content-Type: application/json
+  Accept: application/json
+pathVariables:
+  - key: id
+    value: 411cf55d-85c7-5f95-e284-d89ba4e998da
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+body:
+  type: json
+  content: |-
+    {
+      "title": "stringstring",
+      "description": "string",
+      "submit_limit": 9,
+      "date_start": "1982-11-27",
+      "date_end": "2008-10-22",
+      "materials_url": "https://qHYPwPQclVLEACYEiCZ.gboDYjtH0j+WSeuQBtnrhsHk1c+0sALWde"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 255
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "submit_limit": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 10
+        },
+        "date_start": {
+          "type": "string",
+          "format": "date"
+        },
+        "date_end": {
+          "type": "string",
+          "format": "date"
+        },
+        "materials_url": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/Частично обновить задание.resources/examples
+order: 2000

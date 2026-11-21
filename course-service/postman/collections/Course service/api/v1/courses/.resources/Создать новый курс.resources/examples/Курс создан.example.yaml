@@ -1,0 +1,102 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/courses"
+  method: POST
+  headers:
+    - key: Idempotency-Key
+      value: 00000000-0000-0000-0000-000000000000
+      disabled: false
+      description: ""
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: application/json
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  body:
+    type: json
+    content: |-
+      {
+        "title": "stringstringstring",
+        "teacher_id": "4a264d57-6b98-33e9-79b0-6a1dd630d5a2",
+        "description": "A course description long enough to satisfy the minimum length in the API contract.",
+        "status": "ACTIVE"
+      }
+response:
+  statusCode: 201
+  statusText: Created
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "title": "stringstringstring",
+        "teacher_id": "d22bb694-0882-71c7-b7b0-31a98ebe55d9",
+        "id": "7a60e231-b937-895a-da6c-cf06e0c9e695",
+        "created_at": "1958-01-17T19:49:51.292Z",
+        "updated_at": "1947-07-08T03:26:01.301Z",
+        "description": "A course description long enough to satisfy the minimum length in the API contract.",
+        "status": "ACTIVE"
+      }
+    $type: |-
+      {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 16,
+                "maxLength": 256
+              },
+              "description": {
+                "type": "string",
+                "minLength": 64,
+                "maxLength": 2048
+              },
+              "teacher_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "DRAFT",
+                  "ACTIVE",
+                  "CLOSED"
+                ],
+                "example": "ACTIVE"
+              }
+            },
+            "required": [
+              "title",
+              "teacher_id"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "created_at",
+              "updated_at"
+            ]
+          }
+        ]
+      }
+order: 1000

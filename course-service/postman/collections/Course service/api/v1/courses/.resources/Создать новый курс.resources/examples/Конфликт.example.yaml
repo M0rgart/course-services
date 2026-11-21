@@ -1,0 +1,84 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/courses"
+  method: POST
+  headers:
+    - key: Idempotency-Key
+      value: 00000000-0000-0000-0000-000000000000
+      disabled: false
+      description: ""
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: application/problem+json
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  body:
+    type: json
+    content: |-
+      {
+        "title": "stringstringstring",
+        "teacher_id": "4a264d57-6b98-33e9-79b0-6a1dd630d5a2",
+        "description": "A course description long enough to satisfy the minimum length in the API contract.",
+        "status": "ACTIVE"
+      }
+response:
+  statusCode: 409
+  statusText: Conflict
+  headers:
+    Content-Type: application/problem+json
+  body:
+    type: json
+    content: |-
+      {
+        "error": {
+          "code": "COURSE_ALREADY_EXISTS",
+          "message": "Курс уже существует",
+          "status": 409,
+          "path": "/api/v1/courses",
+          "request_id": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "COURSE_NOT_FOUND"
+              },
+              "message": {
+                "type": "string",
+                "example": "Курс не существует"
+              },
+              "status": {
+                "type": "integer",
+                "example": 404
+              },
+              "path": {
+                "type": "string",
+                "example": "/api/v1/courses/"
+              },
+              "request_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "status",
+              "path",
+              "request_id"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+order: 4000

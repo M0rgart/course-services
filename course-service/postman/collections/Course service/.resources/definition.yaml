@@ -1,0 +1,9 @@
+$kind: collection
+description: |-
+  Course service API
+
+  Contact Support:
+   Name: Тех. поддержка
+   Email: support@yandex.ru
+variables:
+  baseUrl: http://127.0.0.1:8888

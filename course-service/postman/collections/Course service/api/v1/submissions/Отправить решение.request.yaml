@@ -1,0 +1,64 @@
+$kind: http-request
+description: Доступно студенту. Лимит попыток задаётся в Assignment.submit_limit.
+url: "{{baseUrl}}/api/v1/submissions"
+method: POST
+headers:
+  - key: Idempotency-Key
+    value: 00000000-0000-0000-0000-000000000000
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "example": "00000000-0000-0000-0000-000000000000"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "assignment_id": "e7f93b34-c8ea-239d-434f-ba4391a98684",
+      "repository_url": "http://dzavVXPCtGVyLcJzIPP.ogzjvVwXiF,3LYNdo7GmiyRJ7Ig5QIIbLEquPNGfY-Dq9HVmrQq7piwqnxNpn31Q0G8",
+      "artifacts_url": "https://iRcQUaZK.vsvYL+hLP2tRpWnOB8lXeLFROxm0OocKg.IUjRX3rcYzOd"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "assignment_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "repository_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "artifacts_url": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "assignment_id"
+      ]
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/Отправить решение.resources/examples
+order: 1000

@@ -1,0 +1,128 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/submissions/:id/review"
+  method: POST
+  headers:
+    - key: Idempotency-Key
+      value: 00000000-0000-0000-0000-000000000000
+      disabled: false
+      description: ""
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: application/json
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  pathVariables:
+    id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: json
+    content: |-
+      {
+        "type": "MANUAL",
+        "mark": 93.15095718071056,
+        "feedback": "string",
+        "auto_score": 55.484997106383496,
+        "manual": 96.05070811816108
+      }
+response:
+  statusCode: 201
+  statusText: Created
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "type": "MANUAL",
+        "mark": 46.47628962647584,
+        "id": "78c79163-0ec9-6dd1-8493-05919f7bd09d",
+        "submission_id": "ce2b1eb6-56d7-3b8d-5bec-2273ff878634",
+        "reviewer_id": "d20370bb-f294-42a7-d9df-c7411bd6aed5",
+        "created_at": "1989-07-10T01:09:41.799Z",
+        "status": "PROCESSING",
+        "feedback": "string",
+        "auto_score": 20.023412801588382,
+        "manual": 60.30361071682356
+      }
+    $type: |-
+      {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "MANUAL",
+                  "AUTO"
+                ],
+                "example": "MANUAL"
+              },
+              "feedback": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "mark": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "format": "float"
+              },
+              "auto_score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "format": "float"
+              },
+              "manual": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "format": "float"
+              }
+            },
+            "required": [
+              "type",
+              "mark"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "submission_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reviewer_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PROCESSING",
+                  "COMPLETED"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "submission_id",
+              "reviewer_id",
+              "created_at",
+              "status"
+            ]
+          }
+        ]
+      }
+order: 1000

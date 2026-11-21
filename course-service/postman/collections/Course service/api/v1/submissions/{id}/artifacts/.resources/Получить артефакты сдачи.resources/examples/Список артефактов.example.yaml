@@ -1,0 +1,74 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/submissions/:id/artifacts"
+  method: GET
+  headers:
+    Accept: application/json
+  pathVariables:
+    id: 411cf55d-85c7-5f95-e284-d89ba4e998da
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "data": [
+          {
+            "id": "884ae4c6-6319-ff4f-b5dc-cda192095e55",
+            "submission_id": "c8344979-c766-c491-dec6-41fa31c8a5a7",
+            "url": "http://lGYouv.ntevE0M-g3ePHSVWfCJprZlAYy",
+            "type": "file"
+          },
+          {
+            "id": "cded080d-75db-5729-ce18-b4517eab3100",
+            "submission_id": "29a1922a-585a-6462-a3ea-919ba61dca66",
+            "url": "http://xVFcKisNHFTqfPxdPgblHguQsVzeUg.ghbyQHaVoegTFcfFRAaaeGQsoI1w9z",
+            "type": "file"
+          }
+        ]
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "submission_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string",
+                  "example": "file"
+                }
+              },
+              "required": [
+                "id",
+                "submission_id",
+                "url"
+              ]
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      }
+order: 1000
