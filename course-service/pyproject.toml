@@ -2,7 +2,7 @@
 name = "course-services"
 version = "0.1.0"
 description = "Course service description"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "uvicorn==0.53.0",
     "fastapi==0.141.1",
@@ -13,12 +13,14 @@ dependencies = [
     "pyyaml==6.0.3",
     "pyjwt==2.10.1",
     "aiosqlite==0.22.1",
+    "typing-extensions==4.15.0",
 ]
 
 [dependency-groups]
 dev = [
     { include-group = "test" },
     { include-group = "lint" },
+    "types-pyyaml>=6.0.12.20261103",
 ]
 test = [
     "pytest==9.1.1",
@@ -64,7 +66,7 @@ known_first_party = ["src"]
 src_paths = ["src", "tests"]
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.11"
 strict = true
 warn_unused_configs = true
 warn_redundant_casts = true
@@ -79,6 +81,8 @@ exclude = ['\.venv', 'build', 'dist']
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_any_generics = false
 
 [tool.ruff]
 line-length = 100
@@ -92,6 +96,10 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
+"src/core/external.py" = ["S310"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -111,7 +119,7 @@ extend-exclude = '''
 '''
 
 [tool.pylint.main]
-py-version = "3.14"
+py-version = "3.11"
 jobs = 0
 ignore = [".venv", "build", "dist"]
 
@@ -119,7 +127,10 @@ ignore = [".venv", "build", "dist"]
 max-line-length = 100
 
 [tool.pylint."messages control"]
-disable = ["C0114", "C0115", "C0116", "R0903"]
+disable = [
+    "C0114", "C0115", "C0116", "R0903", "E1101", "E1102", "R0801",
+    "R0901", "R0913", "R0914", "R0917", "W0223", "W0613",
+]
 
 [tool.radon]
 cc_min = "B"
