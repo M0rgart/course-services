@@ -1,0 +1,9 @@
+workspace:
+  id: 4256fb9b-7b68-4052-8c53-3a3df7d7db67
+localResources:
+  specs:
+    - ../openapi.yaml
+    - ../postman/specs/Course service/openapi.yaml
+resourceNameMappings:
+  specs:
+    - ../postman/specs/Course service/openapi.yaml: Course service
