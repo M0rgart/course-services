@@ -18,6 +18,11 @@ loggers:
     handlers: [console]
     propagate: false
 
+  sqlalchemy.engine:
+    level: WARNING
+    handlers: [console]
+    propagate: false
+
 root:
   level: INFO
   handlers: [console]

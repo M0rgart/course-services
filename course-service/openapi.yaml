@@ -18,12 +18,31 @@ tags:
     description: Отправка и просмотр решений
   - name: Reviews
     description: Проверка решений и обратная связь
+security:
+  - bearerAuth: []
 
 paths:
+  /service:
+    get:
+      security: []
+      tags: [service]
+      summary: Проверить состояние сервиса
+      responses:
+        "200":
+          description: Сервис работает
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [healthy]
+                properties:
+                  healthy: { type: boolean, example: true }
+
   /api/v1/courses:
     get:
       tags: [Courses]
       summary: Получить список доступных курсов
+      description: Администратор видит все курсы, преподаватель — свои, студент — курсы, на которые записан.
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
@@ -65,9 +84,9 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationError" }
 
-  /api/v1/courses/{id}:
+  /api/v1/courses/{course_id}:
     parameters:
-      - $ref: "#/components/parameters/CourseId"
+      - $ref: "#/components/parameters/CourseIdPath"
     get:
       tags: [Courses]
       summary: Получить курс
@@ -84,6 +103,7 @@ paths:
       security: [{ bearerAuth: [] }]
       tags: [Courses]
       summary: Частично обновить курс
+      description: Доступно назначенному преподавателю курса и администратору. Переназначение преподавателя доступно только администратору.
       requestBody:
         required: true
         content:
@@ -92,6 +112,26 @@ paths:
       responses:
         "200":
           description: Курс обновлён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Course" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    put:
+      security: [{ bearerAuth: [] }]
+      tags: [Courses]
+      summary: Полностью заменить курс
+      description: Доступно только администратору
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourseReplace" }
+      responses:
+        "200":
+          description: Курс заменён
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Course" }
@@ -116,6 +156,7 @@ paths:
     get:
       tags: [Courses]
       summary: Получить студентов курса
+      description: Доступно назначенному преподавателю и администратору.
       responses:
         "200":
           description: Список студентов
@@ -134,6 +175,9 @@ paths:
       security: [{ bearerAuth: [] }]
       tags: [Courses]
       summary: Записать студента на курс
+      description: Доступно только администратору.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
       responses:
         "201": { description: Студент записан }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -144,6 +188,7 @@ paths:
       security: [{ bearerAuth: [] }]
       tags: [Courses]
       summary: Удалить студента с курса
+      description: Доступно только администратору.
       responses:
         "204": { description: Студент удалён }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -155,6 +200,7 @@ paths:
       security: [{ bearerAuth: [] }]
       tags: [Assignments]
       summary: Создать задание
+      description: Доступно преподавателю курса и администратору.
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -174,6 +220,7 @@ paths:
     get:
       tags: [Assignments]
       summary: Получить список заданий
+      description: Администратор видит все задания, преподаватель — задания своих курсов, студент — задания курсов, на которые он записан.
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
@@ -188,7 +235,7 @@ paths:
               schema: { $ref: "#/components/schemas/Assignments" }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
-  /api/v1/assignments/{id}:
+  /api/v1/assignments/{assignment_id}:
     parameters:
       - $ref: "#/components/parameters/AssignmentId"
     get:
@@ -235,7 +282,7 @@ paths:
       security: [{ bearerAuth: [] }]
       tags: [Submissions]
       summary: Отправить решение
-      description: Доступно студенту. Лимит попыток задаётся в Assignment.submit_limit.
+      description: Доступно записанному на курс студенту в период выполнения задания. Лимит попыток задаётся в Assignment.submit_limit.
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -275,7 +322,7 @@ paths:
               schema: { $ref: "#/components/schemas/Submissions" }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
-  /api/v1/submissions/{id}:
+  /api/v1/submissions/{submission_id}:
     parameters:
       - $ref: "#/components/parameters/SubmissionId"
     get:
@@ -291,7 +338,7 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/submissions/{id}/artifacts:
+  /api/v1/submissions/{submission_id}/artifacts:
     parameters:
       - $ref: "#/components/parameters/SubmissionId"
     get:
@@ -307,7 +354,7 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/submissions/{id}/review:
+  /api/v1/submissions/{submission_id}/review:
     parameters:
       - $ref: "#/components/parameters/SubmissionId"
     post:
@@ -379,8 +426,8 @@ components:
       type: object
       required: [title, teacher_id]
       properties:
-        title: { type: string, minLength: 15, maxLength: 255 }
-        description: { type: string, minLength: 2, maxLength: 4096 }
+        title: { type: string, minLength: 16, maxLength: 256 }
+        description: { type: string, minLength: 64, maxLength: 2048 }
         teacher_id: { type: string, format: uuid }
         status: { $ref: "#/components/schemas/CourseStatus" }
       additionalProperties: false
@@ -388,8 +435,18 @@ components:
     CourseUpdate:
       type: object
       properties:
-        title: { type: string, minLength: 15, maxLength: 255 }
-        description: { type: string, minLength: 2, maxLength: 4096 }
+        title: { type: string, minLength: 16, maxLength: 256 }
+        description: { type: string, minLength: 64, maxLength: 2048 }
+        teacher_id: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/CourseStatus" }
+      additionalProperties: false
+
+    CourseReplace:
+      type: object
+      required: [title, teacher_id, status]
+      properties:
+        title: { type: string, minLength: 16, maxLength: 256 }
+        description: { type: string, minLength: 64, maxLength: 2048 }
         teacher_id: { type: string, format: uuid }
         status: { $ref: "#/components/schemas/CourseStatus" }
       additionalProperties: false
@@ -585,11 +642,7 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      schema:
-        type: string
-        minLength: 36
-        maxLength: 36
-        example: 00000000-0000-0000-0000-000000000000
+      schema: { type: string, format: uuid, example: 00000000-0000-0000-0000-000000000000 }
     CourseId:
       name: id
       in: path
@@ -606,12 +659,12 @@ components:
       required: true
       schema: { type: string, format: uuid }
     AssignmentId:
-      name: id
+      name: assignment_id
       in: path
       required: true
       schema: { type: string, format: uuid }
     SubmissionId:
-      name: id
+      name: submission_id
       in: path
       required: true
       schema: { type: string, format: uuid }
