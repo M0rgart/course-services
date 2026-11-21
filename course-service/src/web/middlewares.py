@@ -2,9 +2,11 @@ import logging
 import time
 from uuid import UUID, uuid4
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import FastAPI
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
+from starlette.types import ASGIApp
 
 from src.core.config import Settings
 
@@ -12,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         request_id_header = request.headers.get("X-Request-Id")
         try:
             request_id = str(UUID(request_id_header)) if request_id_header else str(uuid4())
@@ -25,7 +27,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
@@ -34,11 +36,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 class BodySizeLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, max_bytes: int) -> None:
+    def __init__(self, app: ASGIApp, max_bytes: int) -> None:
         super().__init__(app)
         self.max_bytes = max_bytes
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         length = request.headers.get("content-length")
         if length is not None and length.isdecimal() and int(length) > self.max_bytes:
             return JSONResponse(
@@ -46,7 +48,7 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
                 content={
                     "error": {
                         "code": "BODY_TOO_LARGE",
-                        "message": "Request body too large",
+                        "message": "Размер тела запроса превышает допустимый предел",
                         "status": 413,
                         "path": request.url.path,
                         "request_id": request.state.request_id,
@@ -58,7 +60,7 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         started = time.perf_counter()
         response = await call_next(request)
         elapsed_ms = (time.perf_counter() - started) * 1000
@@ -73,7 +75,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def install_middlewares(app, settings: Settings) -> None:
+def install_middlewares(app: FastAPI, settings: Settings) -> None:
     app.add_middleware(LoggingMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.security.body_limit_bytes)

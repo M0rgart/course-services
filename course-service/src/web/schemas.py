@@ -5,10 +5,10 @@ from uuid import UUID
 
 from pydantic import AnyUrl, AwareDatetime, BaseModel, ConfigDict, Field
 
-Title15 = Annotated[str, Field(min_length=15, max_length=255)]
+Title16 = Annotated[str, Field(min_length=16, max_length=256)]
 Title8 = Annotated[str, Field(min_length=8, max_length=255)]
 Description4096 = Annotated[str, Field(max_length=4096)]
-DescriptionMin2 = Annotated[str, Field(min_length=2, max_length=4096)]
+DescriptionMin64 = Annotated[str, Field(min_length=64, max_length=2048)]
 SubmitLimit = Annotated[int, Field(ge=3, le=10)]
 Mark = Annotated[float, Field(ge=0.0, le=100.0)]
 
@@ -49,12 +49,6 @@ class ReviewStatus(StrEnum):
     COMPLETED = "COMPLETED"
 
 
-class Status1(StrEnum):
-    DRAFT = "DRAFT"
-    ACTIVE = "ACTIVE"
-    CLOSED = "CLOSED"
-
-
 class ErrorDetail(BaseSchemaModel):
     code: str
     message: str
@@ -76,8 +70,8 @@ class Pagination(BaseSchemaModel):
 class CourseCreate(BaseSchemaModel):
     model_config = ConfigDict(extra="forbid")
 
-    title: Title15
-    description: DescriptionMin2 | None = None
+    title: Title16
+    description: DescriptionMin64 | None = None
     teacher_id: UUID
     status: CourseStatus | None = None
 
@@ -85,8 +79,8 @@ class CourseCreate(BaseSchemaModel):
 class CourseUpdate(BaseSchemaModel):
     model_config = ConfigDict(extra="forbid")
 
-    title: Title15 | None = None
-    description: DescriptionMin2 | None = None
+    title: Title16 | None = None
+    description: DescriptionMin64 | None = None
     teacher_id: UUID | None = None
     status: CourseStatus | None = None
 
@@ -112,6 +106,15 @@ class Courses(BaseSchemaModel):
 class CourseStudents(BaseSchemaModel):
     course_id: UUID
     students_ids: list[UUID]
+
+
+class CourseReplace(BaseSchemaModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: Title16
+    description: DescriptionMin64 | None = None
+    teacher_id: UUID
+    status: CourseStatus
 
 
 class AssignmentCreate(BaseSchemaModel):

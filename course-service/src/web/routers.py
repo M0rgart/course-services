@@ -1,13 +1,19 @@
-import logging
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from src.core import services
-from src.core.db import SessionDep
-from src.core.security import CurrentUserDep, TeacherDep
-from src.web.dependencies import ExternalServiceDep, IdempotencyKey, Page, get_page
+from src.application import assignments, common, courses, reviews, submissions
+from src.application.create_course import CreateCourseUseCase
+from src.core.security import AdminDep, CurrentUserDep, StudentDep, TeacherDep
+from src.web.dependencies import (
+    ExternalServiceDep,
+    IdempotencyKey,
+    Page,
+    RepositoryDep,
+    UnitOfWorkDep,
+    get_page,
+)
 from src.web.lifespans import lifespan_service_router
 from src.web.schemas import (
     Artifacts,
@@ -17,7 +23,9 @@ from src.web.schemas import (
     AssignmentUpdate,
     Course,
     CourseCreate,
+    CourseReplace,
     Courses,
+    CourseStatus,
     CourseStudents,
     CourseUpdate,
     Error,
@@ -25,27 +33,23 @@ from src.web.schemas import (
     ReviewCreate,
     ReviewUpdate,
     ServiceInfo,
-    Status1,
     Submission,
     SubmissionCreate,
     Submissions,
 )
 
-logger = logging.getLogger(__name__)
-
 PageDep = Annotated[Page, Depends(get_page)]
 
-service_router = APIRouter(
-    prefix="/service", lifespan=lifespan_service_router, tags=["service"]
-)
+service_router = APIRouter(prefix="/service", lifespan=lifespan_service_router, tags=["service"])
+assignments_router = APIRouter(prefix="/api/v1/assignments", tags=["Assignments"])
+courses_router = APIRouter(prefix="/api/v1/courses", tags=["Courses"])
+submissions_router = APIRouter(prefix="/api/v1/submissions", tags=["Submissions"])
+reviews_router = APIRouter(prefix="/api/v1/submissions", tags=["Reviews"])
 
 
 @service_router.get("", response_model=ServiceInfo, status_code=200)
-def info() -> ServiceInfo:
-    return services.get_service_info()
-
-
-assignments_router = APIRouter(prefix="/api/v1/assignments", tags=["Assignments"])
+def service_info() -> ServiceInfo:
+    return common.get_service_info()
 
 
 @assignments_router.post(
@@ -57,71 +61,73 @@ assignments_router = APIRouter(prefix="/api/v1/assignments", tags=["Assignments"
 async def create_assignment(
     idempotency_key: IdempotencyKey,
     body: AssignmentCreate,
-    user: CurrentUserDep,
-    session: SessionDep,
+    user: TeacherDep,
+    repository: RepositoryDep,
 ) -> Assignment:
-    return await services.create_assignment(session, idempotency_key, body, user.id)
+    return await assignments.create_assignment(
+        repository, str(idempotency_key), body, user.id, user.role
+    )
 
 
-@assignments_router.get(
-    "", response_model=Assignments, responses={"401": {"model": Error}}
-)
+@assignments_router.get("", response_model=Assignments, responses={"401": {"model": Error}})
 async def list_assignments(
-    _user: CurrentUserDep,
+    user: CurrentUserDep,
     page: PageDep,
-    session: SessionDep,
+    repository: RepositoryDep,
     course_id: UUID | None = None,
 ) -> Assignments:
-    return await services.list_assignments(session, page.offset, page.limit, course_id)
+    return await assignments.list_assignments(
+        repository, page.offset, page.limit, course_id, user.id, user.role
+    )
 
 
 @assignments_router.get(
-    "/{id}",
+    "/{assignment_id}",
     response_model=Assignment,
-    responses={"401": {"model": Error}, "404": {"model": Error}},
+    responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
 async def get_assignment(
-    id: UUID, _user: CurrentUserDep, session: SessionDep
+    assignment_id: UUID, user: CurrentUserDep, repository: RepositoryDep
 ) -> Assignment:
-    return await services.get_assignment(session, id)
+    return await assignments.get_assignment(repository, assignment_id, user.id, user.role)
 
 
 @assignments_router.patch(
-    "/{id}",
+    "/{assignment_id}",
     response_model=Assignment,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
 async def update_assignment(
-    id: UUID,
+    assignment_id: UUID,
     body: AssignmentUpdate,
     user: TeacherDep,
-    session: SessionDep,
+    repository: RepositoryDep,
 ) -> Assignment:
-    return await services.update_assignment(session, id, body, user.id)
+    return await assignments.update_assignment(repository, assignment_id, body, user.id, user.role)
 
 
 @assignments_router.delete(
-    "/{id}",
-    response_model=None,
+    "/{assignment_id}",
     status_code=204,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-async def delete_assignment(id: UUID, user: TeacherDep, session: SessionDep) -> None:
-    await services.delete_assignment(session, id, user.id)
-
-
-courses_router = APIRouter(prefix="/api/v1/courses", tags=["Courses"])
+async def delete_assignment(
+    assignment_id: UUID, user: TeacherDep, repository: RepositoryDep
+) -> None:
+    await assignments.delete_assignment(repository, assignment_id, user.id, user.role)
 
 
 @courses_router.get("", response_model=Courses, responses={"401": {"model": Error}})
 async def list_courses(
-    _user: CurrentUserDep,
+    user: CurrentUserDep,
     page: PageDep,
-    session: SessionDep,
+    repository: RepositoryDep,
     sort: str | None = None,
-    status: Status1 | None = None,
+    status: CourseStatus | None = None,
 ) -> Courses:
-    return await services.list_courses(session, page.offset, page.limit, sort, status)
+    return await courses.list_courses(
+        repository, page.offset, page.limit, sort, status, user.id, user.role
+    )
 
 
 @courses_router.post(
@@ -138,10 +144,10 @@ async def list_courses(
 async def create_course(
     idempotency_key: IdempotencyKey,
     body: CourseCreate,
-    user: TeacherDep,
-    session: SessionDep,
+    user: AdminDep,
+    unit_of_work: UnitOfWorkDep,
 ) -> Course:
-    return await services.create_course(session, idempotency_key, body, user.id)
+    return await CreateCourseUseCase(unit_of_work).execute(str(idempotency_key), body, user.id)
 
 
 @courses_router.get(
@@ -150,14 +156,13 @@ async def create_course(
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
 async def get_course_students(
-    course_id: UUID, _user: CurrentUserDep, session: SessionDep
+    course_id: UUID, user: TeacherDep, repository: RepositoryDep
 ) -> CourseStudents:
-    return await services.get_course_students(session, course_id)
+    return await courses.get_course_students(repository, course_id, user.id, user.role)
 
 
 @courses_router.post(
     "/{course_id}/students/{student_id}",
-    response_model=None,
     status_code=201,
     responses={
         "401": {"model": Error},
@@ -169,38 +174,38 @@ async def get_course_students(
 async def enroll_student(
     course_id: UUID,
     student_id: UUID,
-    user: TeacherDep,
-    session: SessionDep,
+    idempotency_key: IdempotencyKey,
+    _user: AdminDep,
+    repository: RepositoryDep,
 ) -> None:
-    await services.enroll_student(session, course_id, student_id, user.id)
+    await courses.enroll_student(repository, str(idempotency_key), course_id, student_id, _user.id)
 
 
 @courses_router.delete(
     "/{course_id}/students/{student_id}",
-    response_model=None,
     status_code=204,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
 async def unenroll_student(
     course_id: UUID,
     student_id: UUID,
-    user: TeacherDep,
-    session: SessionDep,
+    _user: AdminDep,
+    repository: RepositoryDep,
 ) -> None:
-    await services.unenroll_student(session, course_id, student_id, user.id)
+    await courses.unenroll_student(repository, course_id, student_id)
 
 
 @courses_router.get(
-    "/{id}",
+    "/{course_id}",
     response_model=Course,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-async def get_course(id: UUID, _user: CurrentUserDep, session: SessionDep) -> Course:
-    return await services.get_course(session, id)
+async def get_course(course_id: UUID, user: CurrentUserDep, repository: RepositoryDep) -> Course:
+    return await courses.get_course(repository, course_id, user.id, user.role)
 
 
 @courses_router.patch(
-    "/{id}",
+    "/{course_id}",
     response_model=Course,
     responses={
         "401": {"model": Error},
@@ -210,22 +215,40 @@ async def get_course(id: UUID, _user: CurrentUserDep, session: SessionDep) -> Co
     },
 )
 async def update_course(
-    id: UUID, body: CourseUpdate, user: TeacherDep, session: SessionDep
+    course_id: UUID,
+    body: CourseUpdate,
+    user: TeacherDep,
+    repository: RepositoryDep,
 ) -> Course:
-    return await services.update_course(session, id, body, user.id)
+    return await courses.update_course(repository, course_id, body, user.id, user.role)
+
+
+@courses_router.put(
+    "/{course_id}",
+    response_model=Course,
+    responses={
+        "401": {"model": Error},
+        "403": {"model": Error},
+        "404": {"model": Error},
+        "422": {"model": Error},
+    },
+)
+async def replace_course(
+    course_id: UUID,
+    body: CourseReplace,
+    user: AdminDep,
+    repository: RepositoryDep,
+) -> Course:
+    return await courses.update_course(repository, course_id, body, user.id, user.role)
 
 
 @courses_router.delete(
-    "/{id}",
-    response_model=None,
+    "/{course_id}",
     status_code=204,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
-async def delete_course(id: UUID, user: TeacherDep, session: SessionDep) -> None:
-    await services.delete_course(session, id, user.id)
-
-
-submissions_router = APIRouter(prefix="/api/v1/submissions", tags=["Submissions"])
+async def delete_course(course_id: UUID, _user: AdminDep, repository: RepositoryDep) -> None:
+    await courses.delete_course(repository, course_id)
 
 
 @submissions_router.post(
@@ -243,53 +266,54 @@ submissions_router = APIRouter(prefix="/api/v1/submissions", tags=["Submissions"
 async def create_submission(
     idempotency_key: IdempotencyKey,
     body: SubmissionCreate,
-    user: CurrentUserDep,
-    session: SessionDep,
+    user: StudentDep,
+    unit_of_work: UnitOfWorkDep,
 ) -> Submission:
-    return await services.create_submission(session, idempotency_key, body, user.id)
+    return await submissions.create_submission(
+        unit_of_work.repository,
+        str(idempotency_key),
+        body,
+        user.id,
+        unit_of_work.outbox,
+    )
 
 
-@submissions_router.get(
-    "", response_model=Submissions, responses={"401": {"model": Error}}
-)
+@submissions_router.get("", response_model=Submissions, responses={"401": {"model": Error}})
 async def list_submissions(
     user: CurrentUserDep,
     page: PageDep,
-    session: SessionDep,
+    repository: RepositoryDep,
     assignment_id: UUID | None = None,
 ) -> Submissions:
-    return await services.list_submissions(
-        session, page.offset, page.limit, assignment_id, user.id
+    return await submissions.list_submissions(
+        repository, page.offset, page.limit, assignment_id, user.id, user.role
     )
 
 
 @submissions_router.get(
-    "/{id}",
+    "/{submission_id}",
     response_model=Submission,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
 async def get_submission(
-    id: UUID, user: CurrentUserDep, session: SessionDep
+    submission_id: UUID, user: CurrentUserDep, repository: RepositoryDep
 ) -> Submission:
-    return await services.get_submission(session, id, user.id)
+    return await submissions.get_submission(repository, submission_id, user.id, user.role)
 
 
 @submissions_router.get(
-    "/{id}/artifacts",
+    "/{submission_id}/artifacts",
     response_model=Artifacts,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
 async def get_submission_artifacts(
-    id: UUID, user: CurrentUserDep, session: SessionDep
+    submission_id: UUID, user: CurrentUserDep, repository: RepositoryDep
 ) -> Artifacts:
-    return await services.get_submission_artifacts(session, id, user.id)
-
-
-reviews_router = APIRouter(prefix="/api/v1/submissions", tags=["Reviews"])
+    return await submissions.get_submission_artifacts(repository, submission_id, user.id, user.role)
 
 
 @reviews_router.post(
-    "/{id}/review",
+    "/{submission_id}/review",
     response_model=Review,
     status_code=201,
     responses={
@@ -302,41 +326,47 @@ reviews_router = APIRouter(prefix="/api/v1/submissions", tags=["Reviews"])
     },
 )
 async def create_review(
-    id: UUID,
+    submission_id: UUID,
     idempotency_key: IdempotencyKey,
     body: ReviewCreate,
     user: TeacherDep,
-    session: SessionDep,
+    repository: RepositoryDep,
     external_service: ExternalServiceDep,
 ) -> Review:
-    return await services.create_review(
-        session, idempotency_key, id, body, user.id, external_service
+    return await reviews.create_review(
+        repository,
+        str(idempotency_key),
+        submission_id,
+        body,
+        user.id,
+        user.role,
+        external_service,
     )
 
 
 @reviews_router.get(
-    "/{id}/review",
+    "/{submission_id}/review",
     response_model=Review,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
 async def get_review(
-    id: UUID, user: CurrentUserDep, session: SessionDep
+    submission_id: UUID, user: CurrentUserDep, repository: RepositoryDep
 ) -> Review:
-    return await services.get_review(session, id, user.id)
+    return await reviews.get_review(repository, submission_id, user.id, user.role)
 
 
 @reviews_router.patch(
-    "/{id}/review",
+    "/{submission_id}/review",
     response_model=Review,
     responses={"401": {"model": Error}, "403": {"model": Error}, "404": {"model": Error}},
 )
 async def update_review(
-    id: UUID,
+    submission_id: UUID,
     body: ReviewUpdate,
     user: TeacherDep,
-    session: SessionDep,
+    repository: RepositoryDep,
 ) -> Review:
-    return await services.update_review(session, id, body, user.id)
+    return await reviews.update_review(repository, submission_id, body, user.id, user.role)
 
 
 all_routers = (
