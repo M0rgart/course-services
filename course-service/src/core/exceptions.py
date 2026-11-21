@@ -8,6 +8,14 @@ class DomainError(Exception):
         self.message = message or self.message
 
 
+class AuthenticationError(DomainError):
+    status = 401
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
 class NotFoundError(DomainError):
     code = "NOT_FOUND"
     status = 404

@@ -27,13 +27,13 @@ def _post_json(url: str, payload: Mapping[str, Any], timeout: float) -> dict[str
     parsed_url = urlsplit(url)
     if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
         raise ExternalServiceError("URL внешнего сервиса должен использовать HTTP или HTTPS")
-    request = Request(  # noqa: S310 - the URL scheme is validated immediately above
+    request = Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urlopen(request, timeout=timeout) as response:  # noqa: S310
+    with urlopen(request, timeout=timeout) as response:
         result = json.loads(response.read())
     if not isinstance(result, dict):
         raise ExternalServiceError("Внешний сервис вернул некорректный ответ")
@@ -41,7 +41,6 @@ def _post_json(url: str, payload: Mapping[str, Any], timeout: float) -> dict[str
 
 
 class AsyncExternalService:
-    """Асинхронный адаптер к проверяющему сервису с лимитом запросов."""
 
     def __init__(self, settings: ExternalServiceSettings) -> None:
         self.url = settings.url

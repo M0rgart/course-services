@@ -1,11 +1,11 @@
 import functools
-from typing import final
+from typing import Any, cast, final
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class AppSettings(BaseSettings):
+class AppSettings(BaseModel):
     title: str = "Course service title"
     description: str = "Course service description"
     summary: str = "Course service summary"
@@ -14,27 +14,25 @@ class AppSettings(BaseSettings):
     redoc_url: str = "/redoc"
     openapi_url: str = "/openapi.json"
 
-    model_config = SettingsConfigDict(extra="allow")
 
-
-class DatabaseSettings(BaseSettings):
+class DatabaseSettings(BaseModel):
     url: str = "sqlite+aiosqlite:///./course.db"
     echo: bool = False
 
 
-class JWTSettings(BaseSettings):
-    secret: str = "change-me-in-env"
+class JWTSettings(BaseModel):
+    secret: str = Field(min_length=32)
     algorithm: str = "HS256"
     issuer: str = "course-service"
     audience: str = "course-service-clients"
     leeway: int = 5
 
 
-class SecuritySettings(BaseSettings):
+class SecuritySettings(BaseModel):
     body_limit_bytes: int = 1_048_576
 
 
-class ExternalServiceSettings(BaseSettings):
+class ExternalServiceSettings(BaseModel):
     url: str | None = None
     timeout_seconds: float = Field(default=2.0, gt=0)
     max_concurrency: int = Field(default=5, ge=1)
@@ -43,11 +41,11 @@ class ExternalServiceSettings(BaseSettings):
 
 @final
 class Settings(BaseSettings):
-    app: AppSettings = AppSettings()
-    db: DatabaseSettings = DatabaseSettings()
-    jwt: JWTSettings = JWTSettings()
-    security: SecuritySettings = SecuritySettings()
-    external: ExternalServiceSettings = ExternalServiceSettings()
+    app: AppSettings = Field(default_factory=AppSettings)
+    db: DatabaseSettings = Field(default_factory=DatabaseSettings)
+    jwt: JWTSettings
+    security: SecuritySettings = Field(default_factory=SecuritySettings)
+    external: ExternalServiceSettings = Field(default_factory=ExternalServiceSettings)
 
     model_config = SettingsConfigDict(
         extra="allow",
@@ -59,4 +57,5 @@ class Settings(BaseSettings):
 
 @functools.lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    settings_type = cast(Any, Settings)
+    return cast(Settings, settings_type())

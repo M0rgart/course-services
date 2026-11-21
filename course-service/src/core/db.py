@@ -1,10 +1,11 @@
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
-from typing import Annotated, cast
+from datetime import UTC, datetime
+from typing import Annotated, Any, cast
 
 from fastapi import Depends, Request
 from sqlalchemy import DateTime, TypeDecorator, event
 from sqlalchemy.ext.asyncio import (
+    AsyncAttrs,
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
@@ -15,38 +16,27 @@ from sqlalchemy.orm import DeclarativeBase
 from src.core.config import Settings
 
 
-class Base(DeclarativeBase):
+class Base(AsyncAttrs, DeclarativeBase):
     pass
 
 
 class UTCDateTime(TypeDecorator[datetime]):
-    """Хранит naive UTC, возвращает aware UTC.
-
-    SQLite (и MySQL) не поддерживают timezone-aware DATETIME и возвращают naive
-    значения. Этот тип нормализует поведение: на вход всегда aware UTC,
-    на выход — aware UTC.
-    """
-
     impl = DateTime
     cache_ok = True
 
-    def process_bind_param(
-        self, value: datetime | None, dialect: object
-    ) -> datetime | None:
+    def process_bind_param(self, value: datetime | None, dialect: object) -> datetime | None:
         if value is None:
             return None
         if value.tzinfo is None:
-            value = value.replace(tzinfo=timezone.utc)
-        return value.astimezone(timezone.utc).replace(tzinfo=None)
+            value = value.replace(tzinfo=UTC)
+        return value.astimezone(UTC).replace(tzinfo=None)
 
-    def process_result_value(
-        self, value: datetime | None, dialect: object
-    ) -> datetime | None:
+    def process_result_value(self, value: datetime | None, dialect: object) -> datetime | None:
         if value is None:
             return None
         if value.tzinfo is None:
-            return value.replace(tzinfo=timezone.utc)
-        return value.astimezone(timezone.utc)
+            return value.replace(tzinfo=UTC)
+        return value.astimezone(UTC)
 
 
 class Database:
@@ -59,7 +49,7 @@ class Database:
         if settings.db.url.startswith("sqlite"):
 
             @event.listens_for(self.engine.sync_engine, "connect")
-            def _set_sqlite_pragma(dbapi_conn, _connection_record):  # noqa: ANN001
+            def _set_sqlite_pragma(dbapi_conn: Any, _connection_record: Any) -> None:
                 cursor = dbapi_conn.cursor()
                 cursor.execute("PRAGMA foreign_keys=ON")
                 cursor.close()
@@ -72,15 +62,13 @@ class Database:
         await self.engine.dispose()
 
 
-async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
-    db = cast(Database, request.app.state.db)
-    async with db.session_factory() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
+async def get_uow(request: Request) -> AsyncIterator[Any]:
+    unit_of_work_factory = cast(Any, request.app.state.uow_factory)
+    async with unit_of_work_factory.create() as unit_of_work:
+        yield unit_of_work
 
 
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
+async def get_repository(
+    unit_of_work: Annotated[Any, Depends(get_uow)],
+) -> AsyncIterator[Any]:
+    yield unit_of_work.repository
