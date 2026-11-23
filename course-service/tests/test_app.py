@@ -1,4 +1,7 @@
+from pathlib import Path
+
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 
 
@@ -35,6 +38,43 @@ def test_get_openapi(app_client: TestClient) -> None:
     assert response.json().get("openapi") == "3.1.0"
 
 
+def test_static_openapi_covers_application_routes(app_client: TestClient) -> None:
+    specification_path = Path("openapi.yaml")
+    specification = specification_path.read_text(encoding="utf-8")
+    postman_specification = Path("postman/specs/Course service/openapi.yaml").read_text(
+        encoding="utf-8"
+    )
+    assert specification == postman_specification
+    contract = yaml.safe_load(specification)
+    runtime_paths = app_client.get("/openapi.json").json()["paths"]
+    contract_paths = contract["paths"]
+    application_paths = {
+        path for path in runtime_paths if path == "/service" or path.startswith("/api/v1/")
+    }
+    assert set(contract_paths) == application_paths
+    for path, operations in contract_paths.items():
+        for method in operations:
+            if method in {"get", "post", "put", "patch", "delete"}:
+                assert method in runtime_paths[path]
+                if method == "post" and path.startswith("/api/v1/"):
+                    parameters = operations[method].get("parameters", [])
+                    assert any(
+                        parameter.get("$ref") == "#/components/parameters/IdempotencyKey"
+                        for parameter in parameters
+                    )
+    assert contract["security"] == [{"bearerAuth": []}]
+    assert contract["paths"]["/service"]["get"]["security"] == []
+    runtime = app_client.get("/openapi.json").json()
+    assert runtime["components"]["securitySchemes"]["bearerAuth"]["scheme"] == "bearer"
+    for path, operations in runtime_paths.items():
+        for method, operation in operations.items():
+            if method in {"get", "post", "put", "patch", "delete"}:
+                if path == "/service":
+                    assert operation.get("security", []) == []
+                else:
+                    assert operation["security"] == [{"bearerAuth": []}]
+
+
 def test_get_swagger(app_client: TestClient) -> None:
     response = app_client.get("/docs")
     assert response.status_code == 200
@@ -59,9 +99,7 @@ def test_invalid_request_id_is_replaced(app_client: TestClient) -> None:
 
 
 def test_oversized_request_is_rejected(app_client: TestClient) -> None:
-    response = app_client.post(
-        "/service", headers={"Content-Length": str(1_048_577)}, content=b""
-    )
+    response = app_client.post("/service", headers={"Content-Length": str(1_048_577)}, content=b"")
 
     assert response.status_code == 413
     assert response.headers["content-type"].startswith("application/problem+json")

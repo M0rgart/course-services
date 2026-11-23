@@ -4,6 +4,7 @@ import time
 from uuid import uuid4
 
 import pytest
+
 from src.core.config import ExternalServiceSettings
 from src.core.external import (
     AsyncExternalService,
@@ -39,10 +40,7 @@ async def test_external_calls_respect_concurrency_limit(monkeypatch) -> None:
     )
 
     await asyncio.gather(
-        *(
-            service.evaluate_submission(uuid4(), uuid4(), float(index))
-            for index in range(8)
-        )
+        *(service.evaluate_submission(uuid4(), uuid4(), float(index)) for index in range(8))
     )
 
     assert maximum_active == 2
@@ -81,9 +79,9 @@ def test_external_http_request_contract(monkeypatch) -> None:
         return FakeResponse()
 
     monkeypatch.setattr("src.core.external.urlopen", fake_urlopen)
-    assert _post_json(
-        "https://grader.example.test/review", {"submission_id": "abc"}, 1.5
-    ) == {"auto_score": 82}
+    assert _post_json("https://grader.example.test/review", {"submission_id": "abc"}, 1.5) == {
+        "auto_score": 82
+    }
 
     with pytest.raises(ExternalServiceError):
         _post_json("file:///tmp/grader", {}, 1.5)

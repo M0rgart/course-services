@@ -29,9 +29,9 @@ uv run pytest
 ## Линтеры
 
 ```bash
-uv run ruff check ./src
-uv run black --check ./src
-uv run isort ./src --check
-uv run mypy ./src --config-file pyproject.toml
+uv run ruff check ./src ./tests ./migrations
+uv run black --check ./src ./tests ./migrations ./generated
+uv run isort ./src ./tests ./migrations ./generated --check
+uv run mypy ./src ./tests --config-file pyproject.toml
 uv run pylint ./src --rcfile pyproject.toml
 ```

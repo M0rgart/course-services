@@ -1,21 +1,22 @@
+from collections.abc import Iterator
+from pathlib import Path
+from uuid import uuid4
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from src.core.config import Settings, get_settings
+
+from src.core.config import DatabaseSettings, JWTSettings, Settings
 from src.web.app import create_app
 from src.web.lifespans import lifespan_app
 
 
 @pytest.fixture
-def settings(tmp_path) -> Settings:
-    configured = get_settings()
+def settings(tmp_path: Path) -> Settings:
     database_path = (tmp_path / "test.db").as_posix()
-    return configured.model_copy(
-        update={
-            "db": configured.db.model_copy(
-                update={"url": f"sqlite+aiosqlite:///{database_path}"}
-            )
-        }
+    return Settings(
+        db=DatabaseSettings(url=f"sqlite+aiosqlite:///{database_path}"),
+        jwt=JWTSettings(secret=f"{uuid4().hex}{uuid4().hex}"),
     )
 
 
@@ -27,6 +28,6 @@ def app(settings: Settings) -> FastAPI:
 
 
 @pytest.fixture
-def app_client(app: FastAPI):
+def app_client(app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as client:
         yield client
